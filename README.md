@@ -10,6 +10,8 @@ This is a recipe app made using Flask, Python & SQLite for University.
 - Comment on recipies
 - Add images to recipies
 - Search recipies
+- Show users recipies
+- Add/Show recipe ratings
 
 
 ## Build instructions
