@@ -9,6 +9,7 @@ This is a recipe app made using Flask, Python & SQLite for University.
 - Delete Recipe
 - Comment on recipies
 - Add images to recipies
+- Search recipies
 
 
 ## Build instructions
