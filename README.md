@@ -12,6 +12,7 @@ This is a recipe app made using Flask, Python & SQLite for University.
 - Search recipies
 - Show users recipies
 - Add/Show recipe ratings
+- Show top recipes
 
 
 ## Build instructions

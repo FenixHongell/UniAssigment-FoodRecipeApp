@@ -2,9 +2,85 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PLEASE LET ME USE NEXTJS</title>
+    <title>RECIPE APP</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100px;
+            background-color: #000;
+            color: #fff;
+            padding-left: 20px;
+        }
+
+        .links {
+            display: flex;
+            flex-direction: column;
+            padding-right: 20px;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: row;
+            height: 800px;
+            width: 100dvw;
+        }
+
+        .col1 {
+            height: 100%;
+            display: flex;
+            background-color: white;
+            width: 70%;
+            padding: 0 8px;
+        }
+
+        .col2 {
+             height: 100%;
+            display: flex;
+            background-color: lightgray;
+            width: 30%;
+            padding: 0 8px;
+        }
+
+        .search {
+
+            width: 100%;
+            height: 20px;
+        }
+
+        .search-label {
+            width: 100%;
+        }
+
+        .search-label {
+            width: 90%;
+        }
+    </style>
 </head>
 <body>
-    <p>Why aren't we allowed to use JavaScript? It was invented for a reason.</p>
+<div class="header">
+    <h1>RECIPE APP</h1>
+    <div class="links">
+        <p>User Name</p>
+        <button>Sign Out</button>
+    </div>
+</div>
+<div class="main">
+    <div class="col1">
+        <label class="search-label" for="recipe-search">
+            <h2>RECIPES</h2>
+            <input class="search" id="recipe-search" type="text" placeholder="Search">
+        </label>
+    </div>
+    <div class="col2">
+        <h2>TOP RECIPES</h2>
+    </div>
+</div>
 </body>
 </html>
