@@ -78,6 +78,7 @@ def validate_credentials(username, password):
     
     return user
 
+#Helper functions for authentication
 def require_login():
     if "user_id" not in session:
         print("redirecting to login")
@@ -129,6 +130,7 @@ def recipes():
     q = request.args.get("q", "", type=str)
     db = sqlite3.connect('./database.db')
     db.row_factory = None
+    # Search functionality
     if q:
         pattern = f"%{q}%"
         recipes = db.execute(
@@ -197,13 +199,11 @@ def edit_recipe(recipe_id: int):
         db.commit()
         db.close()
 
-        # If no row was updated, the recipe either doesn't exist or isn't owned by the user
         if cur.rowcount == 0:
             abort(404)
 
         return redirect("/account")
 
-    # GET: load recipe and ensure ownership
     db = sqlite3.connect("./database.db")
     recipe = db.execute(
         "SELECT id, name, ingredients, directions FROM recipes WHERE id = ? AND user_id = ?",
@@ -219,4 +219,4 @@ def edit_recipe(recipe_id: int):
 
 #TODO sort functions so this file make sense.
 #TODO sort the css into separate files and classes
-#TODO add session so that accounts actually work, sign out, and the rest of the features + protection against SQL injection.
+#TODO add the rest of the features + protection against SQL injection.
