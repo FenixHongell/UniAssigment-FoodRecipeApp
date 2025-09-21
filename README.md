@@ -17,5 +17,6 @@ This is a recipe app made using Flask, Python & SQLite for University.
 
 ## Build instructions
 1. Clone the repo
-2. Run<br/>`$ pip install flask`
-3. Run<br/>`$ flask run`
+2. `$ pip install flask`
+3. `$ sqlite3 database.db < schema.sql`
+3. `$ flask run`
