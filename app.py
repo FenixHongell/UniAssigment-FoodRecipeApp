@@ -171,6 +171,49 @@ def account():
     return render_template("account.html", username=username, recipes=my_recipes)
 
 
+@app.route("/recipes/<int:recipe_id>/edit", methods=["GET", "POST"])
+def edit_recipe(recipe_id: int):
+    require_login()
+    user_id = session["user_id"]
+
+    if request.method == "POST":
+        check_csrf()
+        name = request.form.get("name", "").strip()
+        ingredients = request.form.get("ingredients", "").strip()
+        directions = request.form.get("directions", "").strip()
+
+        if not name:
+            return render_template("editRecipe.html", error="Recipe name is required", recipe=(recipe_id, name, ingredients, directions))
+        if not ingredients:
+            return render_template("editRecipe.html", error="Ingredients are required", recipe=(recipe_id, name, ingredients, directions))
+        if not directions:
+            return render_template("editRecipe.html", error="Directions are required", recipe=(recipe_id, name, ingredients, directions))
+
+        db = sqlite3.connect("./database.db")
+        cur = db.execute(
+            "UPDATE recipes SET name = ?, ingredients = ?, directions = ? WHERE id = ? AND user_id = ?",
+            (name, ingredients, directions, recipe_id, user_id)
+        )
+        db.commit()
+        db.close()
+
+        # If no row was updated, the recipe either doesn't exist or isn't owned by the user
+        if cur.rowcount == 0:
+            abort(404)
+
+        return redirect("/account")
+
+    # GET: load recipe and ensure ownership
+    db = sqlite3.connect("./database.db")
+    recipe = db.execute(
+        "SELECT id, name, ingredients, directions FROM recipes WHERE id = ? AND user_id = ?",
+        (recipe_id, user_id)
+    ).fetchone()
+    db.close()
+    if not recipe:
+        abort(404)
+
+    return render_template("editRecipe.html", recipe=recipe)
 
 
 

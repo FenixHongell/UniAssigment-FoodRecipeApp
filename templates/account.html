@@ -112,11 +112,14 @@
             {% for r in recipes %}
             <article class="recipe">
                 <p class="recipe-name">{{ r[1] }}</p>
-                <form class="actions" action="/recipes/delete" method="post">
-                    <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-                    <input type="hidden" name="recipe_id" value="{{ r[0] }}">
-                    <button type="submit" class="btn danger">Delete</button>
-                </form>
+                <div class="actions">
+                    <a class="btn" href="/recipes/{{ r[0] }}/edit">Edit</a>
+                    <form action="/recipes/delete" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                        <input type="hidden" name="recipe_id" value="{{ r[0] }}">
+                        <button type="submit" class="btn danger">Delete</button>
+                    </form>
+                </div>
             </article>
             {% endfor %}
         </section>
