@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --maxw: 720px;
+            --pad: 16px;
+            --gap: 12px;
+            --radius: 8px;
+            --border: #d0d7de;
+            --error-bg: #fdecea;
+            --error-text: #b71c1c;
+            --primary: #0b5fff;
+            --primary-text: #fff;
+        }
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+            margin: 0;
+            padding: 40px 16px;
+            display: grid;
+            place-items: start center;
+            color: #111;
+            background: #f6f8fa;
+        }
+        .card {
+            width: 100%;
+            max-width: var(--maxw);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: calc(var(--pad) * 1.5);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 16px 0;
+        }
+        form.search {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+        input[type="search"] {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button[type="submit"] {
+            background: var(--primary);
+            color: var(--primary-text);
+            border: 0;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .results-info {
+            color: #57606a;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        .recipes {
+            display: grid;
+            gap: 12px;
+        }
+        .recipe {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .recipe h2 {
+            font-size: 1.1rem;
+            margin: 0 0 8px 0;
+        }
+        .section-title {
+            font-weight: 600;
+            margin: 8px 0 4px 0;
+        }
+        .mono {
+            white-space: pre-wrap;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        a {
+            color: #0969da;
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<main class="card" role="main" aria-labelledby="recipes-title">
+    <div class="header-actions">
+        <h1 id="recipes-title" style="flex:1">Recipes</h1>
+        <a href="/">Back to home</a>
+    </div>
+
+    <form class="search" action="/recipes" method="get" novalidate>
+        <label for="q">Search recipes</label>
+        <div class="row">
+            <input id="q" name="q" type="search" placeholder="Search by name, ingredient, or directions" value="{{ q or '' }}">
+            <button type="submit">Search</button>
+        </div>
+    </form>
+
+    <div class="results-info">
+        {% if recipes %}
+            {% if q %}Showing {{ recipes|length }} result(s) for “{{ q }}”{% else %}Showing {{ recipes|length }} recipe(s){% endif %}
+        {% else %}
+            {% if q %}No results for “{{ q }}”.{% else %}No recipes found.{% endif %}
+        {% endif %}
+    </div>
+
+    <section class="recipes" aria-live="polite">
+        {% for r in recipes %}
+        <article class="recipe">
+            <h2>{{ r[1] }}</h2>
+            <div class="section-title">Ingredients</div>
+            <div class="mono">{{ r[2] }}</div>
+            <div class="section-title">Directions</div>
+            <div class="mono">{{ r[3] }}</div>
+        </article>
+        {% endfor %}
+    </section>
+</main>
+</body>
+</html>

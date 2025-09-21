@@ -7,79 +7,69 @@
         body {
             margin: 0;
             padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 100px;
-            background-color: #000;
-            color: #fff;
-            padding-left: 20px;
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .under-construction {
+            font-size: 1.2rem;
+            color: #666;
+            margin: 1rem 0;
         }
 
         .links {
             display: flex;
             flex-direction: column;
-            padding-right: 20px;
+            gap: 1rem;
+            margin-top: 2rem;
         }
 
-        .main {
-            display: flex;
-            flex-direction: row;
-            height: 800px;
-            width: 100dvw;
+        a {
+            text-decoration: none;
+            color: white;
+            background-color: #000;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
 
-        .col1 {
-            height: 100%;
-            display: flex;
-            background-color: white;
-            width: 70%;
-            padding: 0 8px;
-        }
-
-        .col2 {
-             height: 100%;
-            display: flex;
-            background-color: lightgray;
-            width: 30%;
-            padding: 0 8px;
-        }
-
-        .search {
-
-            width: 100%;
-            height: 20px;
-        }
-
-        .search-label {
-            width: 100%;
-        }
-
-        .search-label {
-            width: 90%;
+        a:hover {
+            background-color: #333;
         }
     </style>
 </head>
 <body>
-<div class="header">
+<div class="container">
     <h1>RECIPE APP</h1>
+    <p class="under-construction">🏗️ Site Under Construction<br>Some features require signing in to access</p>
     <div class="links">
-        <p>User Name</p>
-        <button>Sign Out</button>
-    </div>
-</div>
-<div class="main">
-    <div class="col1">
-        <label class="search-label" for="recipe-search">
-            <h2>RECIPES</h2>
-            <input class="search" id="recipe-search" type="text" placeholder="Search">
-        </label>
-    </div>
-    <div class="col2">
-        <h2>TOP RECIPES</h2>
+        {% if not session.user_id %}
+            <a href="/login">Login</a>
+            <a href="/create_account">Create Account</a>
+        {% endif %}
+        <a href="/recipes">Recipes</a>
+        {% if session.user_id %}
+            <a href="/create_recipe">Create Recipe</a>
+            <a href="/logout">Sign Out</a>
+        {% endif %}
     </div>
 </div>
 </body>

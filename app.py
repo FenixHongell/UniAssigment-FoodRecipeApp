@@ -1,17 +1,23 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session, abort
 import sqlite3
 import hashlib
+import secrets
 app = Flask(__name__)
+
+# This is terrible practice, but this is a simple UNI project and I dont want to start using ENV variables.
+app.config['SECRET_KEY'] = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SECURE=False,
+    PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 7
+)
 
 
 def add_visits():
-    """
-    Add a new visit entry to the visits table in the database.
-    :raises sqlite3.Error: If an issue occurs during the database operation.
-    :return: None
-    """
     db = sqlite3.connect('./database.db')
-    db.execute("INSERT INTO visits (visited_at) VALUES (datetime('now'))")
+    db.execute("INSERT INTO visits (last_visit) VALUES (datetime('now'))")
     db.commit()
 @app.route("/")
 def index():
@@ -19,73 +25,128 @@ def index():
 
     return render_template("index.html")
 
-@app.route("/create_account")
+@app.route("/create_account", methods=["GET", "POST"])
 def create_account():
-    return render_template("createAccount.html")
+    if request.method == "POST":
+        db = sqlite3.connect('./database.db')
+        username = request.form.get('username')
+        password = request.form.get('password')
 
-@app.route("/new_account", methods=["POST"])
-def new_account():
-    """
-    Handles the creation of new user accounts. This function connects to the database, checks whether the
-    username already exists, and if not, creates a new user with a hashed password. It provides error handling
-    for duplicate usernames and redirects the user upon successful registration.
+        existing_user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
-    :param request: Flask's request object containing form data with `username` and `password` fields.
-    :type request: flask.request
+        if existing_user:
+            return render_template("createAccount.html", error="Username already exists")
 
-    :return: Renders the account creation page with an error message for duplicate usernames or redirects
-        to the home page upon successful account creation.
-    :rtype: flask.Response
-    """
-    db = sqlite3.connect('./database.db')
-    username = request.form.get('username')
-    password = request.form.get('password')
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+        db.commit()
+        db.close()
 
-    existing_user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        return redirect("/login")
+    else:
+        return render_template("createAccount.html")
 
-    if existing_user:
-        return render_template("createAccount.html", error="Username already exists")
-
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
-    db.commit()
-    db.close()
-
-    return redirect("/")
-
-@app.route("/login")
-def login():
-    return render_template("login.html")
-
-
-@app.route("/login_request", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def signin():
-    """
-    Handle user login requests by validating credentials and directing them
-    to the corresponding page upon success or failure.
 
-    Validates the user-supplied username and password against a SQLite
-    database. If the credentials match an existing user, the user is
-    redirected to the home page. Otherwise, an error message is displayed
-    on the login page.
+    if "user_id" in session:
+        return redirect("/")
 
-    :param username: Submitted username from the login form
-    :param password: Submitted password from the login form
-    :return: A rendered login page with an error message if the credentials
-             are invalid, or a redirection to the home page if successful
-    """
+    if request.method == "POST":
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        user = validate_credentials(username, password)
+
+        if not user:
+            return render_template("login.html", error="Invalid username or password")
+
+        session["user_id"] = user[0]
+        session["username"] = user[1]
+        session["csrf_token"] = secrets.token_hex(16)
+
+        return redirect("/")
+    else:
+        return render_template("login.html")
+
+def validate_credentials(username, password):
     db = sqlite3.connect('./database.db')
-    username = request.form.get('username')
-    password = request.form.get('password')
-
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     user = db.execute("SELECT * FROM users WHERE username = ? AND password = ?",
                       (username, hashed_password)).fetchone()
-
-    if not user:
-        return render_template("login.html", error="Invalid username or password")
-
     db.close()
+    
+    return user
+
+def require_login():
+    if "user_id" not in session:
+        print("redirecting to login")
+        abort(403)
+
+def check_csrf():
+    if "csrf_token" not in request.form:
+        print("csrf token missing")
+        abort(403)
+    if request.form["csrf_token"] != session["csrf_token"]:
+        print("csrf token mismatch")
+        abort(403)
+
+@app.route("/logout")
+def logout():
+    session.clear()
     return redirect("/")
 
-#TODO add session so that accounts actually work, sign out, and the rest of the features.
+@app.route("/create_recipe", methods=["GET", "POST"])
+def create_recipe():
+    require_login()
+
+    if request.method == "POST":
+        check_csrf()
+        db = sqlite3.connect('./database.db')
+        name = request.form.get('name')
+        ingredients = request.form.get('ingredients')
+        directions = request.form.get('directions')
+
+        if not name or name.strip() == "":
+            return render_template("createRecipe.html", error="Recipe name is required")
+        if not ingredients or ingredients.strip() == "":
+            return render_template("createRecipe.html", error="Ingredients are required")
+        if not directions or directions.strip() == "":
+            return render_template("createRecipe.html", error="Directions are required")
+
+        db.execute("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)", (name, ingredients, directions, session["user_id"]))
+
+        db.commit()
+        db.close()
+
+        return redirect("/")
+
+    else:
+        return render_template("createRecipe.html")
+
+@app.route("/recipes")
+def recipes():
+    q = request.args.get("q", "", type=str)
+    db = sqlite3.connect('./database.db')
+    db.row_factory = None  # rows are tuples: (id, name, ingredients, directions, user_id)
+    if q:
+        pattern = f"%{q}%"
+        recipes = db.execute(
+            "SELECT * FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC",
+            (pattern, pattern, pattern)
+        ).fetchall()
+    else:
+        recipes = db.execute(
+            "SELECT * FROM recipes ORDER BY id DESC"
+        ).fetchall()
+    db.close()
+    return render_template("recipes.html", recipes=recipes, q=q)
+
+
+
+
+
+
+#TODO sort functions so this file make sense.
+#TODO sort the css into separate files and classes
+#TODO add session so that accounts actually work, sign out, and the rest of the features + protection against SQL injection.

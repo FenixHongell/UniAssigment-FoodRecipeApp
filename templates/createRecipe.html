@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>Create Recipe</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         :root {
@@ -55,13 +55,17 @@
             font-weight: 600;
         }
         input[type="text"],
-        input[type="password"] {
+        textarea {
             padding: 10px 12px;
             border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 1rem;
             width: 100%;
             box-sizing: border-box;
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
         }
         .actions {
             margin-top: 16px;
@@ -91,8 +95,8 @@
     </style>
 </head>
 <body>
-    <main class="card" role="main" aria-labelledby="login-title">
-        <h1 id="login-title">Login</h1>
+    <main class="card" role="main" aria-labelledby="create-recipe-title">
+        <h1 id="create-recipe-title">Create Recipe</h1>
 
         {% if error %}
         <div class="error" role="alert" aria-live="polite">
@@ -100,35 +104,46 @@
         </div>
         {% endif %}
 
-        <form action="/login" method="post" novalidate>
+        <form action="/create_recipe" method="post" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
             <div class="field">
-                <label for="username">Username</label>
+                <label for="name">Recipe name</label>
                 <input
-                    id="username"
-                    name="username"
+                    id="name"
+                    name="name"
                     type="text"
                     required
-                    autocomplete="username"
-                    placeholder="Enter your username"
+                    placeholder="e.g., Classic Pancakes"
                 />
             </div>
 
             <div class="field">
-                <label for="password">Password</label>
-                <input
-                    id="password"
-                    name="password"
-                    type="password"
+                <label for="ingredients">Ingredients</label>
+                <textarea
+                    id="ingredients"
+                    name="ingredients"
                     required
-                    autocomplete="current-password"
-                    placeholder="Enter your password"
-                />
+                    placeholder="- 1 cup flour
+- 1 egg
+- 1 cup milk
+- Pinch of salt"></textarea>
+                <div class="hint">List each ingredient on a new line.</div>
+            </div>
+
+            <div class="field">
+                <label for="directions">Directions</label>
+                <textarea
+                    id="directions"
+                    name="directions"
+                    required
+                    placeholder="1) Mix dry ingredients.
+2) Add wet ingredients and whisk.
+3) Cook on medium heat until golden."></textarea>
             </div>
 
             <div class="actions">
-                <button type="submit">Sign in</button>
+                <button type="submit">Create recipe</button>
                 <a href="/">Back to home</a>
-                <a href="/create_account" style="margin-left:auto;">Create account</a>
             </div>
         </form>
     </main>
