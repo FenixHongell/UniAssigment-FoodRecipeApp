@@ -10,7 +10,7 @@ def add_visits():
     :raises sqlite3.Error: If an issue occurs during the database operation.
     :return: None
     """
-    db = sqlite3.connect('./database/database.db')
+    db = sqlite3.connect('./database.db')
     db.execute("INSERT INTO visits (visited_at) VALUES (datetime('now'))")
     db.commit()
 @app.route("/")
@@ -37,7 +37,7 @@ def new_account():
         to the home page upon successful account creation.
     :rtype: flask.Response
     """
-    db = sqlite3.connect('./database/database.db')
+    db = sqlite3.connect('./database.db')
     username = request.form.get('username')
     password = request.form.get('password')
 
@@ -74,7 +74,7 @@ def signin():
     :return: A rendered login page with an error message if the credentials
              are invalid, or a redirection to the home page if successful
     """
-    db = sqlite3.connect('./database/database.db')
+    db = sqlite3.connect('./database.db')
     username = request.form.get('username')
     password = request.form.get('password')
 
