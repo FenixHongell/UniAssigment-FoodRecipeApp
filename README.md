@@ -7,7 +7,7 @@ This is a recipe app made using Flask, Python & SQLite for University.
 - Login ✅
 - Create Recipe ✅
 - View Recipe ✅
-- Delete Recipe ⏳
+- Delete Recipe ✅
 - Comment on recipies ⏳
 - Add images to recipies ⏳
 - Search recipies ✅

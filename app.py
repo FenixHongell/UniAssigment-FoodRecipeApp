@@ -4,7 +4,7 @@ import hashlib
 import secrets
 app = Flask(__name__)
 
-# This is terrible practice, but this is a simple UNI project and I dont want to start using ENV variables.
+# This is terrible practice, but this is a simple UNI project and I dont want to start using ENV variables. Might change later.
 app.config['SECRET_KEY'] = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
 app.config.update(
@@ -128,7 +128,7 @@ def create_recipe():
 def recipes():
     q = request.args.get("q", "", type=str)
     db = sqlite3.connect('./database.db')
-    db.row_factory = None  # rows are tuples: (id, name, ingredients, directions, user_id)
+    db.row_factory = None
     if q:
         pattern = f"%{q}%"
         recipes = db.execute(
@@ -142,6 +142,33 @@ def recipes():
     db.close()
     return render_template("recipes.html", recipes=recipes, q=q)
 
+@app.route("/recipes/delete", methods=["POST"])
+def delete_recipe():
+    require_login()
+    check_csrf()
+    recipe_id = request.form.get("recipe_id", type=int)
+    if not recipe_id:
+        abort(400)
+    user_id = session["user_id"]
+    db = sqlite3.connect("./database.db")
+    cur = db.execute("DELETE FROM recipes WHERE id = ? AND user_id = ?", (recipe_id, user_id))
+    db.commit()
+    db.close()
+    return redirect("/account")
+
+
+@app.route("/account", methods=["GET"])
+def account():
+    require_login()
+    user_id = session["user_id"]
+    username = session.get("username", "User")
+    db = sqlite3.connect("./database.db")
+    my_recipes = db.execute(
+        "SELECT id, name FROM recipes WHERE user_id = ? ORDER BY name",
+        (user_id,)
+    ).fetchall()
+    db.close()
+    return render_template("account.html", username=username, recipes=my_recipes)
 
 
 
