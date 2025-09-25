@@ -183,5 +183,4 @@ def edit_recipe(recipe_id: int):
 
     return render_template("editRecipe.html", recipe=result[0])
 
-#TODO sort the css into separate files and classes
-#TODO add the rest of the features + protection against SQL injection.
+#TODO add the rest of the features.
