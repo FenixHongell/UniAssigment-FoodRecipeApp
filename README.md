@@ -1,5 +1,5 @@
 # RECIPE APP
-This is a recipe app made using Flask, Python & SQLite for University.
+This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 
 ## Features
 
@@ -12,7 +12,7 @@ This is a recipe app made using Flask, Python & SQLite for University.
 - Add images to recipies ⏳
 - Search recipies ✅
 - Show users recipies ✅
-- Add/Show recipe ratings ⏳
+- Add/Show recipe ratings ✅
 - Show top recipes ⏳
 
 
@@ -21,3 +21,8 @@ This is a recipe app made using Flask, Python & SQLite for University.
 2. `$ pip install flask`
 3. `$ sqlite3 database.db < schema.sql`
 3. `$ flask run`
+
+## Pylint instructions
+To view the pylint review you can run the following commands
+1. `$ pylint app.py`
+2. `$ pylint helpers.py`
