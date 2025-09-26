@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ recipe[1] }} • Recipe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --maxw: 720px;
+            --pad: 16px;
+            --gap: 12px;
+            --radius: 8px;
+            --border: #d0d7de;
+            --error-bg: #fdecea;
+            --error-text: #b71c1c;
+            --primary: #0b5fff;
+            --primary-text: #fff;
+        }
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+            margin: 0;
+            padding: 40px 16px;
+            display: grid;
+            place-items: start center;
+            color: #111;
+            background: #f6f8fa;
+        }
+        .card {
+            width: 100%;
+            max-width: var(--maxw);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: calc(var(--pad) * 1.5);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        h1 {
+            font-size: 1.6rem;
+            margin: 0 0 8px 0;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-weight: 600;
+            margin: 12px 0 6px 0;
+        }
+        .mono {
+            white-space: pre-wrap;
+        }
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        a {
+            color: #0969da;
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+        .btn {
+            background: var(--primary);
+            color: var(--primary-text);
+            border: 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .muted {
+            color: #57606a;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+<main class="card" role="main" aria-labelledby="recipe-title">
+    <div class="header-actions">
+        <h1 id="recipe-title">{{ recipe[1] }}</h1>
+        <div class="row">
+            <a href="/recipes">Back to recipes</a>
+            <span class="muted">•</span>
+            <a href="/">Home</a>
+        </div>
+    </div>
+
+    <section>
+        <div class="section-title">Ingredients</div>
+        <div class="mono">{{ recipe[2] }}</div>
+    </section>
+
+    <section>
+        <div class="section-title">Directions</div>
+        <div class="mono">{{ recipe[3] }}</div>
+    </section>
+
+    <section style="margin-top: 12px;">
+        <div class="section-title">Rating</div>
+        <div class="row" style="margin-bottom:8px;">
+            <span aria-live="polite">
+                Average: <strong>{{ avg_rating }}</strong> / 5
+                <span class="muted">({{ ratings_count }} rating{{ '' if ratings_count == 1 else 's' }})</span>
+            </span>
+        </div>
+
+        <form action="/rate" method="post" class="row" style="gap:8px; flex-wrap: wrap;">
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+            <input type="hidden" name="recipe_id" value="{{ recipe[0] }}">
+
+            <fieldset style="border:0; padding:0; margin:0;" aria-label="Set your rating">
+                {% for n in [1,2,3,4,5] %}
+                    <label style="margin-right:6px; cursor:pointer;">
+                        <input type="radio" name="rating" value="{{ n }}" {% if user_rating == n %}checked{% endif %}>
+                        {{ n }}★
+                    </label>
+                {% endfor %}
+            </fieldset>
+
+            <button type="submit" class="btn">Save rating</button>
+            {% if user_rating %}
+                <span class="muted">Your rating: {{ user_rating }}★</span>
+            {% endif %}
+        </form>
+    </section>
+</main>
+</body>
+</html>

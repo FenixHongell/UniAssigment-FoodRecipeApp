@@ -62,14 +62,14 @@
     <p class="under-construction">🏗️ Site Under Construction<br>Some features require signing in to access</p>
     <div class="links">
         {% if not session.user_id %}
-            <a href="/login">Login</a>
-            <a href="/create_account">Create Account</a>
+        <a href="/login">Login</a>
+        <a href="/create_account">Create Account</a>
         {% endif %}
-        <a href="/recipes">Recipes</a>
         {% if session.user_id %}
-            <a href="/account">Account</a>
-            <a href="/create_recipe">Create Recipe</a>
-            <a href="/logout">Sign Out</a>
+        <a href="/recipes">Recipes</a>
+        <a href="/account">Account</a>
+        <a href="/create_recipe">Create Recipe</a>
+        <a href="/logout">Sign Out</a>
         {% endif %}
     </div>
 </div>

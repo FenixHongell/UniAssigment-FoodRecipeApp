@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 from flask import Flask, render_template, request, redirect, session, abort
-from helpers import execute_cmd, run_query
+from helpers import execute_cmd, run_query, get_avg_rating
 
 app = Flask(__name__)
 
@@ -113,6 +113,7 @@ def create_recipe():
 
 @app.route("/recipes")
 def recipes():
+    require_login()
     q = request.args.get("q", "", type=str)
     # Search functionality
     if q:
@@ -122,7 +123,9 @@ def recipes():
     else:
         rec = run_query("SELECT * FROM recipes ORDER BY id DESC")
 
-    return render_template("recipes.html", recipes=rec, q=q)
+    ratings = {r[0]: get_avg_rating(r[0]) for r in rec}
+
+    return render_template("recipes.html", recipes=rec, q=q, ratings=ratings)
 
 @app.route("/recipes/delete", methods=["POST"])
 def delete_recipe():
@@ -183,4 +186,49 @@ def edit_recipe(recipe_id: int):
 
     return render_template("editRecipe.html", recipe=result[0])
 
-#TODO add the rest of the features.
+@app.route("/rate", methods=["POST"])
+def rate():
+    require_login()
+    check_csrf()
+
+    recipe_id = request.form.get("recipe_id", type=int)
+    rating = request.form.get("rating", type=int)
+
+    if not recipe_id or rating is None:
+        abort(400)
+
+    if rating < 1 or rating > 5:
+        abort(400)
+
+    user_id = session["user_id"]
+
+    existing = run_query(
+        "SELECT id FROM ratings WHERE recipe_id = ? AND user_id = ? LIMIT 1",
+        [recipe_id, user_id]
+    )
+    if existing:
+        execute_cmd(
+            "UPDATE ratings SET rating = ? WHERE recipe_id = ? AND user_id = ?",
+            [rating, recipe_id, user_id]
+        )
+    else:
+        execute_cmd(
+            "INSERT INTO ratings (rating, recipe_id, user_id) VALUES (?, ?, ?)",
+            [rating, recipe_id, user_id]
+        )
+
+    return redirect(f"/recipes/{recipe_id}")
+
+
+@app.route("/recipes/<int:recipe_id>", methods=["GET"])
+def recipe(recipe_id: int):
+    require_login()
+    result = run_query("SELECT id, name, ingredients, directions FROM recipes WHERE id = ?", [recipe_id])
+    if len(result) == 0:
+        abort(404)
+
+    rating = get_avg_rating(recipe_id)
+
+    user_rating_row  = run_query("SELECT rating FROM ratings WHERE recipe_id = ? AND user_id = ? LIMIT 1", [recipe_id, session["user_id"]])
+    user_rating = user_rating_row[0][0] if user_rating_row else None
+    return render_template("recipe.html", recipe=result[0], avg_rating=rating[0], ratings_count=rating[1], user_rating=user_rating)

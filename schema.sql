@@ -16,4 +16,22 @@ CREATE TABLE recipes (
     directions TEXT,
     user_id INTEGER,
     FOREIGN KEY (user_id) REFERENCES users(id)
-)
+);
+
+CREATE TABLE comments (
+    id INTEGER PRIMARY KEY,
+    content TEXT,
+    recipe_id INTEGER,
+    user_id INTEGER,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE ratings (
+    id INTEGER PRIMARY KEY,
+    rating INTEGER,
+    recipe_id INTEGER,
+    user_id INTEGER,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
