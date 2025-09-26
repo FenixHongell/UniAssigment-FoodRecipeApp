@@ -1,8 +1,6 @@
-from flask import Flask, render_template, request, redirect, session, abort
-import sqlite3
 import hashlib
 import secrets
-
+from flask import Flask, render_template, request, redirect, session, abort
 from helpers import execute_cmd, run_query
 
 app = Flask(__name__)
@@ -58,8 +56,8 @@ def create_account():
         execute_cmd("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashed_password])
 
         return redirect("/login")
-    else:
-        return render_template("createAccount.html")
+
+    return render_template("createAccount.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def signin():
@@ -80,8 +78,8 @@ def signin():
         session["csrf_token"] = secrets.token_hex(16)
 
         return redirect("/")
-    else:
-        return render_template("login.html")
+
+    return render_template("login.html")
 
 @app.route("/logout")
 def logout():
@@ -105,12 +103,13 @@ def create_recipe():
         if not directions or directions.strip() == "":
             return render_template("createRecipe.html", error="Directions are required")
 
-        execute_cmd("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)", [name, ingredients, directions, session["user_id"]])
+        execute_cmd("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)",
+                    [name, ingredients, directions, session["user_id"]])
 
         return redirect("/")
 
-    else:
-        return render_template("createRecipe.html")
+
+    return render_template("createRecipe.html")
 
 @app.route("/recipes")
 def recipes():
@@ -118,11 +117,12 @@ def recipes():
     # Search functionality
     if q:
         pattern = f"%{q}%"
-        recipes = run_query("SELECT * FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC", [pattern, pattern, pattern])
+        rec = run_query("SELECT * FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC",
+                            [pattern, pattern, pattern])
     else:
-        recipes = run_query("SELECT * FROM recipes ORDER BY id DESC")
+        rec = run_query("SELECT * FROM recipes ORDER BY id DESC")
 
-    return render_template("recipes.html", recipes=recipes, q=q)
+    return render_template("recipes.html", recipes=rec, q=q)
 
 @app.route("/recipes/delete", methods=["POST"])
 def delete_recipe():

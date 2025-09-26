@@ -1,0 +1,41 @@
+[MASTER]
+# Avoid linting your virtual env, compiled files, etc.
+ignore=venv,.venv,.env,__pycache__,migrations,build,dist
+# Load Flask-aware checks (requires pylint-flask)
+load-plugins=pylint_flask
+
+[MESSAGES CONTROL]
+# Start with a few common relaxations; tighten later as you go.
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    R0903,  # too-few-public-methods (often fine for simple data holders)
+    W0511   # TODOs (optional: keep noise down if you use TODOs a lot)
+
+[FORMAT]
+# Match your team preference
+max-line-length=150
+
+[BASIC]
+# Encourage clear names, but allow short ones for counters, etc.
+good-names=i,j,k,_,ex,pk,id
+
+[REPORTS]
+score=yes
+
+[SIMILARITIES]
+# Slightly reduce duplicate-code sensitivity for small handlers/templates
+min-similarity-lines=6
+
+[TYPECHECK]
+# If your IDE resolves these but PyLint can’t, you can list them here.
+# Usually not necessary when installed in the same venv.
+# ignored-modules=
+
+[DESIGN]
+# Tune later if needed
+max-args=10
+max-locals=25
+max-branches=15
+max-returns=6
