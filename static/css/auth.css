@@ -1,0 +1,9 @@
+:root {
+    --maxw: 420px;
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: -4px;
+}

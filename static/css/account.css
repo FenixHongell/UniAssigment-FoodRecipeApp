@@ -1,0 +1,48 @@
+:root {
+    --maxw: 720px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.user {
+    font-weight: 600;
+}
+
+.btn {
+    text-decoration: none;
+}
+
+.danger {
+    background: var(--danger);
+}
+
+.recipes {
+    display: grid;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.recipe {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.recipe-name {
+    font-weight: 600;
+    margin: 0;
+}
+
+.subtle {
+    font-size: 0.95rem;
+}
