@@ -15,7 +15,7 @@ CREATE TABLE recipes (
     ingredients TEXT,
     directions TEXT,
     user_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE comments (
@@ -23,8 +23,9 @@ CREATE TABLE comments (
     content TEXT,
     recipe_id INTEGER,
     user_id INTEGER,
-    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE ratings (
@@ -32,8 +33,8 @@ CREATE TABLE ratings (
     rating INTEGER,
     recipe_id INTEGER,
     user_id INTEGER,
-    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE recipe_images (

@@ -72,20 +72,21 @@
             <li class="comment-item">
                 <div class="comment-meta">
                     <strong>{{ c[2] }}</strong>
+                    <span class="muted">{{ format_timestamp(c[4]) }}</span>
                     {% if c[3] == session.user_id %}
                     <form class="comment-actions" action="/comment/delete" method="post">
-                      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
-                      <input type="hidden" name="recipe_id" value="{{ recipe[0] }}">
-                      <input type="hidden" name="comment_id" value="{{ c[0] }}">
-                      <button type="submit" class="comment-delete" aria-label="Delete your comment">Delete</button>
+                        <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                        <input type="hidden" name="recipe_id" value="{{ recipe[0] }}">
+                        <input type="hidden" name="comment_id" value="{{ c[0] }}">
+                        <button type="submit" class="comment-delete" aria-label="Delete your comment">Delete</button>
                     </form>
                     {% endif %}
-                  </div>
-                  <div class="comment-content">{{ c[1]|trim }}</div>
-                </li>
-              {% endfor %}
-            </ul>
-            {% else %}
+                </div>
+                <div class="comment-content">{{ c[1]|trim }}</div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
         <p>No comments yet. Be the first to comment!</p>
         {% endif %}
 

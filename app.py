@@ -1,9 +1,14 @@
 import hashlib
 import secrets
 from flask import Flask, render_template, request, redirect, session, abort, make_response
+
+from formatting import format_timestamp
 from helpers import execute_cmd, run_query, get_avg_rating, validate_credentials
 
 app = Flask(__name__)
+
+# The things we do to not use javascript on the frontend smh, anyway this registers the function for use in templates
+app.jinja_env.globals["format_timestamp"] = format_timestamp
 
 # This is terrible practice, but this is a simple UNI project and I dont want to start using ENV variables. Might change later.
 app.config['SECRET_KEY'] = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
@@ -295,7 +300,7 @@ def recipe(recipe_id: int):
 
     comments = run_query(
         """
-        SELECT c.id, c.content, u.username, c.user_id
+        SELECT c.id, c.content, u.username, c.user_id, c.created_at
         FROM comments c
                  JOIN users u ON u.id = c.user_id
         WHERE c.recipe_id = ?
@@ -303,9 +308,6 @@ def recipe(recipe_id: int):
         """,
         [recipe_id]
     )
-
-    for comment in comments:
-        print(comment)
 
     return render_template("recipe.html", recipe=result[0], avg_rating=rating[0], ratings_count=rating[1],
                            user_rating=user_rating, comments=comments)
@@ -324,7 +326,8 @@ def add_comment():
     if len(comment) > 1000:
         abort(400)
 
-    execute_cmd("INSERT INTO comments (content, recipe_id, user_id) VALUES (?, ?, ?)",
+    execute_cmd(
+        "INSERT INTO comments (content, recipe_id, user_id) VALUES (?, ?, ?)",
                 [comment, recipe_id, session["user_id"]])
 
     return redirect(f"/recipes/{recipe_id}")

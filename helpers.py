@@ -3,6 +3,7 @@ import sqlite3
 
 def create_connection():
     db = sqlite3.connect("./database.db")
+    db.execute("PRAGMA foreign_keys = ON")
     return db
 
 def close_connection(db):
