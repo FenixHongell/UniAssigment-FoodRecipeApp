@@ -22,9 +22,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 - Packages: `Flask`, `Pylint` (development)
 
 ## Setup
-1. Clone the repository
-   - `git clone <repo-url>`
-   - `cd <repo-folder>`
+1. Clone the repository `git clone https://github.com/FenixHongell/UniAssigment-FoodRecipeApp`
 
 2. Install dependencies
    - `pip install --upgrade pip`
