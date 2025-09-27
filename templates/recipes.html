@@ -170,7 +170,7 @@
                 {% set avg = ratings.get(r[0])[0] if ratings and ratings.get(r[0]) else 0 %}
                 {% set cnt = ratings.get(r[0])[1] if ratings and ratings.get(r[0]) else 0 %}
                 <div class="rating-badge" aria-label="Average rating {{ avg }} out of 5 with {{ cnt }} rating{% if cnt != 1 %}s{% endif %}">
-                    {{ avg }}/5 ★ ({{ cnt }} ratings)
+                    {{ avg }}/5 ⭐ ({{ cnt }} ratings)
                 </div>
                 <h2>{{ r[1] }}</h2>
                 <div class="section-title">Ingredients</div>

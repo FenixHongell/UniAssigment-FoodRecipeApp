@@ -40,7 +40,24 @@ def add_visits():
 def index():
     add_visits()
 
-    return render_template("index.html")
+    top_recipes = run_query(
+        """
+        SELECT r.id,
+               r.name,
+               r.ingredients,
+               r.directions,
+               ROUND(AVG(rt.rating), 1) AS avg_rating,
+               COUNT(rt.id) AS ratings_count
+        FROM recipes r
+        LEFT JOIN ratings rt ON rt.recipe_id = r.id
+        GROUP BY r.id, r.name, r.ingredients, r.directions
+        ORDER BY COALESCE(AVG(rt.rating), 0) DESC, COUNT(rt.id) DESC, r.id DESC
+        LIMIT 3
+        """
+    )
+
+
+    return render_template("index.html", top_recipes=top_recipes)
 
 @app.route("/create_account", methods=["GET", "POST"])
 def create_account():

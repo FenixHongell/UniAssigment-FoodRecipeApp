@@ -115,14 +115,14 @@
                 {% for n in [1,2,3,4,5] %}
                     <label style="margin-right:6px; cursor:pointer;">
                         <input type="radio" name="rating" value="{{ n }}" {% if user_rating == n %}checked{% endif %}>
-                        {{ n }}★
+                        {{ n }}⭐
                     </label>
                 {% endfor %}
             </fieldset>
 
             <button type="submit" class="btn">Save rating</button>
             {% if user_rating %}
-                <span class="muted">Your rating: {{ user_rating }}★</span>
+                <span class="muted">Your rating: {{ user_rating }}⭐</span>
             {% endif %}
         </form>
     </section>
