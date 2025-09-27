@@ -61,3 +61,103 @@ h1 {
 .rating-option {
     cursor: pointer;
 }
+
+.comments h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: var(--heading);
+}
+
+.comment-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.comment-actions {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+}
+
+.comment-delete {
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--danger);
+    background: var(--danger) !important;
+    color: var(--primary-text);
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1;
+    font-weight: 600;
+    transition: background 0.15s ease, transform 0.02s ease, opacity 0.15s ease;
+}
+
+.comment-delete:active {
+    transform: translateY(1px);
+}
+
+.comment-meta strong {
+    color: var(--heading);
+    font-weight: 600;
+}
+
+.comment-content {
+    color: var(--text);
+    line-height: 1.5;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.comments hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 1rem 0 1.25rem;
+}
+
+.comment-form {
+    display: grid;
+    gap: 0.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.comment-form label {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.comment-form button[type="submit"] {
+    justify-self: start;
+    padding: 0.55rem 0.9rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: var(--primary-text);
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.02s ease;
+}
+
+.comment-form button[type="submit"]:hover {
+    background: var(--primary-hover);
+}
+
+.comments p {
+    color: var(--muted);
+    margin: 0.25rem 0 0;
+}

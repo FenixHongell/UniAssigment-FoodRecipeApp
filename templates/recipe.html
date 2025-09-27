@@ -43,17 +43,54 @@
 
             <fieldset class="fieldset-reset" aria-label="Set your rating">
                 {% for n in [1,2,3,4,5] %}
-                    <label class="mr-6 rating-option">
-                        <input type="radio" name="rating" value="{{ n }}" {% if user_rating == n %}checked{% endif %}>
-                        {{ n }}⭐
-                    </label>
+                <label class="mr-6 rating-option">
+                    <input type="radio" name="rating" value="{{ n }}" {% if user_rating== n %}checked{% endif %}>
+                    {{ n }}⭐
+                </label>
                 {% endfor %}
             </fieldset>
 
             <button type="submit" class="btn">Save rating</button>
             {% if user_rating %}
-                <span class="muted">Your rating: {{ user_rating }}⭐</span>
+            <span class="muted">Your rating: {{ user_rating }}⭐</span>
             {% endif %}
+        </form>
+    </section>
+
+    <section class="comments">
+        <h2>Comments</h2>
+
+        {% if comments and comments|length > 0 %}
+        <ul class="comment-list">
+            {% for c in comments %}
+            <li class="comment-item">
+                <div class="comment-meta">
+                    <strong>{{ c[2] }}</strong>
+                    {% if c[3] == session.user_id %}
+                    <form class="comment-actions" action="/comment/delete" method="post">
+                      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+                      <input type="hidden" name="recipe_id" value="{{ recipe[0] }}">
+                      <input type="hidden" name="comment_id" value="{{ c[0] }}">
+                      <button type="submit" class="comment-delete" aria-label="Delete your comment">Delete</button>
+                    </form>
+                    {% endif %}
+                  </div>
+                  <div class="comment-content">{{ c[1]|trim }}</div>
+                </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+        <p>No comments yet. Be the first to comment!</p>
+        {% endif %}
+
+        <hr>
+
+        <form action="/comment" method="post" class="comment-form">
+            <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+            <input type="hidden" name="recipe_id" value="{{ recipe[0] }}">
+            <label for="content">Add a comment</label>
+            <textarea id="content" name="content" rows="3" required></textarea>
+            <button type="submit">Post Comment</button>
         </form>
     </section>
 </main>

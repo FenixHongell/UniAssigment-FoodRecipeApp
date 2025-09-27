@@ -15,11 +15,13 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 7
 )
 
-#Helper functions for authentication
+
+# Helper functions for authentication
 def require_login():
     if "user_id" not in session:
         print("redirecting to login")
         abort(403)
+
 
 def check_csrf():
     if "csrf_token" not in request.form:
@@ -29,8 +31,11 @@ def check_csrf():
         print("csrf token mismatch")
         abort(403)
 
+
 def add_visits():
     execute_cmd("INSERT INTO visits (last_visit) VALUES (datetime('now'))")
+
+
 @app.route("/")
 def index():
     add_visits()
@@ -42,17 +47,16 @@ def index():
                r.ingredients,
                r.directions,
                ROUND(AVG(rt.rating), 1) AS avg_rating,
-               COUNT(rt.id) AS ratings_count
+               COUNT(rt.id)             AS ratings_count
         FROM recipes r
-        LEFT JOIN ratings rt ON rt.recipe_id = r.id
+                 LEFT JOIN ratings rt ON rt.recipe_id = r.id
         GROUP BY r.id, r.name, r.ingredients, r.directions
-        ORDER BY COALESCE(AVG(rt.rating), 0) DESC, COUNT(rt.id) DESC, r.id DESC
-        LIMIT 3
+        ORDER BY COALESCE(AVG(rt.rating), 0) DESC, COUNT(rt.id) DESC, r.id DESC LIMIT 3
         """
     )
 
-
     return render_template("index.html", top_recipes=top_recipes)
+
 
 @app.route("/create_account", methods=["GET", "POST"])
 def create_account():
@@ -70,6 +74,7 @@ def create_account():
         return redirect("/login")
 
     return render_template("createAccount.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def signin():
@@ -93,10 +98,12 @@ def signin():
 
     return render_template("login.html")
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
+
 
 @app.route("/create_recipe", methods=["GET", "POST"])
 def create_recipe():
@@ -120,8 +127,8 @@ def create_recipe():
 
         return redirect("/")
 
-
     return render_template("createRecipe.html")
+
 
 @app.route("/recipes")
 def recipes():
@@ -130,14 +137,16 @@ def recipes():
     # Search functionality
     if q:
         pattern = f"%{q}%"
-        rec = run_query("SELECT * FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC",
-                            [pattern, pattern, pattern])
+        rec = run_query(
+            "SELECT * FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC",
+            [pattern, pattern, pattern])
     else:
         rec = run_query("SELECT * FROM recipes ORDER BY id DESC")
 
     ratings = {r[0]: get_avg_rating(r[0]) for r in rec}
 
     return render_template("recipes.html", recipes=rec, q=q, ratings=ratings)
+
 
 @app.route("/recipes/delete", methods=["POST"])
 def delete_recipe():
@@ -191,12 +200,14 @@ def edit_recipe(recipe_id: int):
 
         return redirect("/account")
 
-    result = run_query("SELECT id, name, ingredients, directions FROM recipes WHERE id = ? AND user_id = ?", [recipe_id, user_id])
+    result = run_query("SELECT id, name, ingredients, directions FROM recipes WHERE id = ? AND user_id = ?",
+                       [recipe_id, user_id])
 
     if len(result) == 0:
         abort(404)
 
     return render_template("editRecipe.html", recipe=result[0])
+
 
 @app.route("/rate", methods=["POST"])
 def rate():
@@ -241,6 +252,56 @@ def recipe(recipe_id: int):
 
     rating = get_avg_rating(recipe_id)
 
-    user_rating_row  = run_query("SELECT rating FROM ratings WHERE recipe_id = ? AND user_id = ? LIMIT 1", [recipe_id, session["user_id"]])
+    user_rating_row = run_query("SELECT rating FROM ratings WHERE recipe_id = ? AND user_id = ? LIMIT 1",
+                                [recipe_id, session["user_id"]])
     user_rating = user_rating_row[0][0] if user_rating_row else None
-    return render_template("recipe.html", recipe=result[0], avg_rating=rating[0], ratings_count=rating[1], user_rating=user_rating)
+
+    comments = run_query(
+        """
+        SELECT c.id, c.content, u.username, c.user_id
+        FROM comments c
+                 JOIN users u ON u.id = c.user_id
+        WHERE c.recipe_id = ?
+        ORDER BY c.id DESC
+        """,
+        [recipe_id]
+    )
+
+    for comment in comments:
+        print(comment)
+
+    return render_template("recipe.html", recipe=result[0], avg_rating=rating[0], ratings_count=rating[1],
+                           user_rating=user_rating, comments=comments)
+
+
+@app.route("/comment", methods=["POST"])
+def add_comment():
+    require_login()
+    check_csrf()
+
+    recipe_id = request.form.get("recipe_id", type=int)
+    comment = request.form.get("content", "").strip()
+    if not comment or not recipe_id:
+        abort(400)
+
+    if len(comment) > 1000:
+        abort(400)
+
+    execute_cmd("INSERT INTO comments (content, recipe_id, user_id) VALUES (?, ?, ?)",
+                [comment, recipe_id, session["user_id"]])
+
+    return redirect(f"/recipes/{recipe_id}")
+
+@app.route("/comment/delete", methods=["POST"])
+def delete_comment():
+    require_login()
+    check_csrf()
+    recipe_id = request.form.get("recipe_id", type=int)
+    comment_id = request.form.get("comment_id", type=int)
+    if not recipe_id or not comment_id:
+        abort(400)
+    user_id = session["user_id"]
+
+    execute_cmd("DELETE FROM comments WHERE id = ? AND recipe_id = ? AND user_id = ?", [comment_id, recipe_id, user_id])
+
+    return redirect(f"/recipes/{recipe_id}")
