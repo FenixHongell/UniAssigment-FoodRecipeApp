@@ -8,12 +8,12 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 - Create Recipe ✅
 - View Recipe ✅
 - Delete Recipe ✅
-- Comment on recipies ⏳
+- Comment on recipies ✅
 - Add images to recipies ⏳
 - Search recipies ✅
 - Show users recipies ✅
 - Add/Show recipe ratings ✅
-- Show top recipes ⏳
+- Show top recipes ✅
 
 
 ## Build instructions
