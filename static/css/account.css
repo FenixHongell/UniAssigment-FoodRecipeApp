@@ -19,7 +19,7 @@
 }
 
 .danger {
-    background: var(--danger);
+    background: var(--danger) !important;
 }
 
 .recipes {
