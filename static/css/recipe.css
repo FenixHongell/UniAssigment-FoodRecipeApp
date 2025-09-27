@@ -16,6 +16,19 @@ h1 {
     margin-bottom: 12px;
 }
 
+.cover {
+    margin: 0 0 12px 0;
+}
+
+.cover-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    display: block;
+}
+
 
 .row {
     display: flex;

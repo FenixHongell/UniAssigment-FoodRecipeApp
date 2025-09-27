@@ -18,6 +18,12 @@
         </div>
     </div>
 
+    {% if recipe[4] %}
+    <figure class="cover">
+        <img class="cover-image" src="/recipes/{{ recipe[0] }}/cover" alt="Cover image for {{ recipe[1] }}">
+    </figure>
+    {% endif %}
+
     <section>
         <div class="section-title">Ingredients</div>
         <div class="mono">{{ recipe[2] }}</div>

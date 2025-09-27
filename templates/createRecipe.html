@@ -17,7 +17,7 @@
         </div>
         {% endif %}
 
-        <form action="/create_recipe" method="post" novalidate>
+        <form action="/create_recipe" method="post" enctype="multipart/form-data" novalidate>
             <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
             <div class="field">
                 <label for="name">Recipe name</label>
@@ -52,6 +52,12 @@
                     placeholder="1) Mix dry ingredients.
 2) Add wet ingredients and whisk.
 3) Cook on medium heat until golden."></textarea>
+            </div>
+
+            <div class="field">
+                <label for="cover">Cover image (optional)</label>
+                <input id="cover" name="cover" type="file" accept="image/*">
+                <div class="hint">JPG, PNG, GIF, or WebP. Max 5MB.</div>
             </div>
 
             <div class="actions">

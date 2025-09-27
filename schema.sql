@@ -35,3 +35,10 @@ CREATE TABLE ratings (
     FOREIGN KEY (recipe_id) REFERENCES recipes(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE recipe_images (
+    recipe_id INTEGER PRIMARY KEY,
+    image BLOB NOT NULL,
+    mime_type TEXT,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);

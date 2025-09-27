@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from flask import Flask, render_template, request, redirect, session, abort
+from flask import Flask, render_template, request, redirect, session, abort, make_response
 from helpers import execute_cmd, run_query, get_avg_rating, validate_credentials
 
 app = Flask(__name__)
@@ -115,6 +115,27 @@ def create_recipe():
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
 
+        # Save image if exists
+        file = request.files.get('cover')
+        image_bytes = None
+        mime_type = None
+        if file and file.filename:
+            data = file.read()
+            if len(data) > 5 * 1024 * 1024:
+                return render_template("createRecipe.html", error="Image too large (max 5MB)")
+            header = data[:12]
+            if header.startswith(b"\xff\xd8\xff"):
+                mime_type = "image/jpeg"
+            elif header.startswith(b"\x89PNG\r\n\x1a\n"):
+                mime_type = "image/png"
+            elif header.startswith(b"GIF87a") or header.startswith(b"GIF89a"):
+                mime_type = "image/gif"
+            elif header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+                mime_type = "image/webp"
+            else:
+                return render_template("createRecipe.html", error="Unsupported image format. Use JPG, PNG, GIF, or WebP.")
+            image_bytes = data
+
         if not name or name.strip() == "":
             return render_template("createRecipe.html", error="Recipe name is required")
         if not ingredients or ingredients.strip() == "":
@@ -122,8 +143,13 @@ def create_recipe():
         if not directions or directions.strip() == "":
             return render_template("createRecipe.html", error="Directions are required")
 
-        execute_cmd("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)",
-                    [name, ingredients, directions, session["user_id"]])
+        cur = execute_cmd("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)",
+                          [name, ingredients, directions, session["user_id"]])
+        recipe_id = cur.lastrowid
+
+        if image_bytes is not None:
+            execute_cmd("INSERT OR REPLACE INTO recipe_images (recipe_id, image, mime_type) VALUES (?, ?, ?)",
+                        [recipe_id, image_bytes, mime_type])
 
         return redirect("/")
 
@@ -246,7 +272,18 @@ def rate():
 @app.route("/recipes/<int:recipe_id>", methods=["GET"])
 def recipe(recipe_id: int):
     require_login()
-    result = run_query("SELECT id, name, ingredients, directions FROM recipes WHERE id = ?", [recipe_id])
+    result = run_query(
+        """
+        SELECT r.id,
+               r.name,
+               r.ingredients,
+               r.directions,
+               EXISTS(SELECT 1 FROM recipe_images i WHERE i.recipe_id = r.id) AS has_image
+        FROM recipes r
+        WHERE r.id = ?
+        """,
+        [recipe_id]
+    )
     if len(result) == 0:
         abort(404)
 
@@ -305,3 +342,28 @@ def delete_comment():
     execute_cmd("DELETE FROM comments WHERE id = ? AND recipe_id = ? AND user_id = ?", [comment_id, recipe_id, user_id])
 
     return redirect(f"/recipes/{recipe_id}")
+
+@app.route("/recipes/<int:recipe_id>/cover", methods=["GET"])
+def recipe_cover(recipe_id: int):
+    require_login()
+    row = run_query("SELECT image, mime_type FROM recipe_images WHERE recipe_id = ? LIMIT 1", [recipe_id])
+    if not row:
+        abort(404)
+    data: bytes = row[0][0]
+    ctype = row[0][1] or "application/octet-stream"
+
+    # Fallback if mime_type missing
+    if ctype == "application/octet-stream":
+        if data.startswith(b"\xff\xd8\xff"):
+            ctype = "image/jpeg"
+        elif data.startswith(b"\x89PNG\r\n\x1a\n"):
+            ctype = "image/png"
+        elif data.startswith(b"GIF87a") or data.startswith(b"GIF89a"):
+            ctype = "image/gif"
+        elif data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+            ctype = "image/webp"
+
+    resp = make_response(data)
+    resp.headers["Content-Type"] = ctype
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
