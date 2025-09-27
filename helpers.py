@@ -1,3 +1,4 @@
+import hashlib
 import sqlite3
 
 def create_connection():
@@ -8,6 +9,19 @@ def close_connection(db):
     db.close()
 
 def execute_cmd(cmd, params=None):
+    """
+    Executes a given SQL command with optional parameters, commits the transaction,
+    and returns the result. It ensures the database connection is properly managed
+    by opening and closing it securely within the execution cycle.
+
+    :param cmd: The SQL command to be executed.
+    :type cmd: str
+    :param params: Optional parameterized values to include in the SQL command.
+                   Defaults to an empty list if no parameters are provided.
+    :type params: list, optional
+    :return: The result of the executed SQL command.
+    :rtype: Any
+    """
     if params is None:
         params = []
     db = create_connection()
@@ -17,6 +31,22 @@ def execute_cmd(cmd, params=None):
     return result
 
 def run_query(cmd, params=None, no_factory=False):
+    """
+    Executes a SQL query against the database and returns the result. Establishes a
+    connection to the database, optionally disables the row factory, executes the
+    query with given parameters, and fetches all results before closing the
+    connection.
+
+    :param cmd: The SQL command/query to execute.
+    :type cmd: str
+    :param params: Optional list of parameters to bind to the SQL query.
+    :type params: list, optional
+    :param no_factory: Flag to disable row factory for database connection. Defaults
+        to False.
+    :type no_factory: bool, optional
+    :return: The result set of the executed query.
+    :rtype: list
+    """
     if params is None:
         params = []
     db = create_connection()
@@ -44,3 +74,22 @@ def get_avg_rating(recipe_id):
     if len(result) == 0:
         return 0
     return round(result[0][0]) if result and result[0][0] is not None else 0, result[0][1] if result and result[0][1] is not None else 0
+
+def validate_credentials(username, password):
+    """
+    Validates user credentials against a database. The function hashes the provided
+    password using SHA-256, then compares the resulting hash and username with
+    entries in the database. If a matching user is found, their details are returned;
+    otherwise, None is returned.
+
+    :param username: The username of the user attempting to log in.
+    :type username: str
+    :param password: The plaintext password provided by the user.
+    :type password: str
+    :return: The matching user's information from the database if credentials are valid,
+        otherwise None.
+    :rtype: dict or None
+    """
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    result = run_query("SELECT * FROM users WHERE username = ? AND password = ?", [username, hashed_password])
+    return None if len(result) == 0 else result[0]

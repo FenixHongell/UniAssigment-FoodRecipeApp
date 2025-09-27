@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 from flask import Flask, render_template, request, redirect, session, abort
-from helpers import execute_cmd, run_query, get_avg_rating
+from helpers import execute_cmd, run_query, get_avg_rating, validate_credentials
 
 app = Flask(__name__)
 
@@ -28,11 +28,6 @@ def check_csrf():
     if request.form["csrf_token"] != session["csrf_token"]:
         print("csrf token mismatch")
         abort(403)
-
-def validate_credentials(username, password):
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    result = run_query("SELECT * FROM users WHERE username = ? AND password = ?", [username, hashed_password])
-    return None if len(result) == 0 else result[0]
 
 def add_visits():
     execute_cmd("INSERT INTO visits (last_visit) VALUES (datetime('now'))")
