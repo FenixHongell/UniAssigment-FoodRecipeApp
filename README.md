@@ -15,14 +15,38 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 - Add/Show recipe ratings ✅
 - Show top recipes ✅
 
+## Requirements
+- Python 3.13+
+- SQLite3
+- Virtualenv
+- Packages: `Flask`, `Pylint` (development)
 
-## Build instructions
-1. Clone the repo
-2. `$ pip install flask`
-3. `$ sqlite3 database.db < schema.sql`
-3. `$ flask run`
+## Setup
+1. Clone the repository
+   - `git clone <repo-url>`
+   - `cd <repo-folder>`
 
-## Pylint instructions
-To view the pylint review you can run the following commands
-1. `$ pylint app.py`
-2. `$ pylint helpers.py`
+2. Install dependencies
+   - `pip install --upgrade pip`
+   - `pip install flask pylint`
+
+3. Initialize the database
+   - `sqlite3 database.db < schema.sql`
+
+## Running the app
+- Start the server
+   - `python app.py`
+-  App will be available at http://127.0.0.1:5000
+
+
+## Linting
+- Run Pylint on the project:
+  - Single file: `pylint app.py`
+  - Entire project: `pylint .`
+
+## Notes
+- To reset the database, delete the `database.db` file and run the `sqlite3 database.db < schema.sql` command again.
+
+## Troubleshooting
+- Flask not found: Ensure your virtual environment is activated and `pip install flask` has been run.
+- Database errors: Verify `database.db` exists and matches `schema.sql`.
