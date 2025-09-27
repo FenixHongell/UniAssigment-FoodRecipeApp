@@ -33,7 +33,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 
 ## Running the app
 - Start the server
-   - `python app.py`
+   - `flask run`
 -  App will be available at http://127.0.0.1:5000
 
 
