@@ -9,7 +9,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 - View Recipe ✅
 - Delete Recipe ✅
 - Comment on recipies ✅
-- Add images to recipies ⏳
+- Add images to recipies ✅
 - Search recipies ✅
 - Show users recipies ✅
 - Add/Show recipe ratings ✅
