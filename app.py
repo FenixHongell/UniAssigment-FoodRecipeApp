@@ -68,6 +68,14 @@ def create_account():
     if request.method == "POST":
         username = request.form.get('username')
         password = request.form.get('password')
+
+        if not username or not password:
+            return render_template("createAccount.html", error="Username and password are required")
+        elif len(username) < 4:
+            return render_template("createAccount.html", error="Username must be at least 4 characters long")
+        elif len(password) < 8:
+            return render_template("createAccount.html", error="Password must be at least 8 characters long")
+
         existing_user = run_query("SELECT * FROM users WHERE username = ?", [username])
 
         if len(existing_user) > 0:
@@ -141,12 +149,12 @@ def create_recipe():
                 return render_template("createRecipe.html", error="Unsupported image format. Use JPG, PNG, GIF, or WebP.")
             image_bytes = data
 
-        if not name or name.strip() == "":
-            return render_template("createRecipe.html", error="Recipe name is required")
-        if not ingredients or ingredients.strip() == "":
-            return render_template("createRecipe.html", error="Ingredients are required")
-        if not directions or directions.strip() == "":
-            return render_template("createRecipe.html", error="Directions are required")
+        if not name or len(name.strip()) < 4:
+            return render_template("createRecipe.html", error="Recipe name is required to be over 4 characters")
+        if not ingredients or len(ingredients.strip()) < 10:
+            return render_template("createRecipe.html", error="Ingredients are required to be over 10 characters")
+        if not directions or len(directions.strip()) < 10:
+            return render_template("createRecipe.html", error="Directions are required to be over 10 characters")
 
         cur = execute_cmd("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)",
                           [name, ingredients, directions, session["user_id"]])
@@ -323,7 +331,7 @@ def add_comment():
     if not comment or not recipe_id:
         abort(400)
 
-    if len(comment) > 1000:
+    if len(comment) > 1000 or len(comment.strip()) == 0:
         abort(400)
 
     execute_cmd(
