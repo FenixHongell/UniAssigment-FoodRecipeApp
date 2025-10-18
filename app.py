@@ -95,6 +95,12 @@ def create_account():
 
         existing_user = run_query("SELECT id, username, password FROM users WHERE username = ?", [username])
 
+        if len(existing_user) > 0:
+            return render_template("createAccount.html", error="Username already exists")
+
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        execute_cmd("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashed_password])
+
         return redirect("/login")
 
     return render_template("createAccount.html")

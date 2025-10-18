@@ -74,7 +74,7 @@ def get_avg_rating(recipe_id):
     result = run_query("SELECT AVG(rating), COUNT(*) FROM ratings WHERE recipe_id = ?", [recipe_id])
     if len(result) == 0:
         return 0
-    return round(result[0][0]) if result and result[0][0] is not None else 0, result[0][1] if result and result[0][1] is not None else 0
+    return round(result[0][0], 1) if result and result[0][0] is not None else 0, result[0][1] if result and result[0][1] is not None else 0
 
 def validate_credentials(username, password):
     """

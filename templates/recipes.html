@@ -36,8 +36,8 @@
             <a class="block-link" href="/recipes/{{ r[0] }}" aria-label="View recipe {{ r[1] }}">
                 {% set avg = ratings.get(r[0])[0] if ratings and ratings.get(r[0]) else 0 %}
                 {% set cnt = ratings.get(r[0])[1] if ratings and ratings.get(r[0]) else 0 %}
-                <div class="rating-badge" aria-label="Average rating {{ avg }} out of 5 with {{ cnt }} rating{% if cnt != 1 %}s{% endif %}">
-                    {{ avg }}/5 ⭐ ({{ cnt }} ratings)
+                <div class="rating-badge" aria-label="Average rating {{ ('%.1f' % avg) if cnt else 'no ratings yet' }} out of 5 with {{ cnt }} rating{% if cnt != 1 %}s{% endif %}">
+                    ⭐ {{ ('%.1f' % avg) if cnt else '—' }} ({{ cnt }} rating{% if cnt != 1 %}s{% endif %})
                 </div>
                 <h2>{{ r[1] }}</h2>
                 <div class="section-title">Ingredients</div>
