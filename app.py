@@ -9,7 +9,6 @@ app = Flask(__name__)
 
 # The things we do to not use javascript on the frontend smh, anyway this registers the function for use in templates
 app.jinja_env.globals["format_timestamp"] = format_timestamp
-
 # This is terrible practice, but this is a simple UNI project and I dont want to start using ENV variables. Might change later.
 app.config['SECRET_KEY'] = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
@@ -19,6 +18,20 @@ app.config.update(
     SESSION_COOKIE_SECURE=False,
     PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 7
 )
+
+# Length constraints
+MIN_USERNAME_LEN = 4
+MAX_USERNAME_LEN = 32
+MIN_PASSWORD_LEN = 8
+MAX_PASSWORD_LEN = 128
+MIN_COMMENT_LEN = 1
+MAX_COMMENT_LEN = 1000
+MIN_RECIPE_NAME_LEN = 4
+MAX_RECIPE_NAME_LEN = 100
+MIN_INGREDIENTS_LEN = 10
+MAX_INGREDIENTS_LEN = 5000
+MIN_DIRECTIONS_LEN = 10
+MAX_DIRECTIONS_LEN = 10000
 
 
 # Helper functions for authentication
@@ -71,18 +84,16 @@ def create_account():
 
         if not username or not password:
             return render_template("createAccount.html", error="Username and password are required")
-        elif len(username) < 4:
-            return render_template("createAccount.html", error="Username must be at least 4 characters long")
-        elif len(password) < 8:
-            return render_template("createAccount.html", error="Password must be at least 8 characters long")
+        elif len(username) < MIN_USERNAME_LEN:
+            return render_template("createAccount.html", error=f"Username must be at least {MIN_USERNAME_LEN} characters long")
+        elif len(password) < MIN_PASSWORD_LEN:
+            return render_template("createAccount.html", error=f"Password must be at least {MIN_PASSWORD_LEN} characters long")
+        elif len(username) > MAX_USERNAME_LEN:
+            return render_template("createAccount.html", error=f"Username must be at most {MAX_USERNAME_LEN} characters long")
+        elif len(password) > MAX_PASSWORD_LEN:
+            return render_template("createAccount.html", error=f"Password must be at most {MAX_PASSWORD_LEN} characters long")
 
-        existing_user = run_query("SELECT * FROM users WHERE username = ?", [username])
-
-        if len(existing_user) > 0:
-            return render_template("createAccount.html", error="Username already exists")
-
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        execute_cmd("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashed_password])
+        existing_user = run_query("SELECT id, username, password FROM users WHERE username = ?", [username])
 
         return redirect("/login")
 
@@ -150,12 +161,20 @@ def create_recipe():
                                        error="Unsupported image format. Use JPG, PNG, GIF, or WebP.")
             image_bytes = data
 
-        if not name or len(name.strip()) < 4:
-            return render_template("createRecipe.html", error="Recipe name is required to be over 4 characters")
-        if not ingredients or len(ingredients.strip()) < 10:
-            return render_template("createRecipe.html", error="Ingredients are required to be over 10 characters")
-        if not directions or len(directions.strip()) < 10:
-            return render_template("createRecipe.html", error="Directions are required to be over 10 characters")
+        if not name or len(name.strip()) < MIN_RECIPE_NAME_LEN:
+            return render_template("createRecipe.html", error=f"Recipe name is required to be over {MIN_RECIPE_NAME_LEN} characters")
+        if not ingredients or len(ingredients.strip()) < MIN_INGREDIENTS_LEN:
+            return render_template("createRecipe.html", error=f"Ingredients are required to be over {MIN_INGREDIENTS_LEN} characters")
+        if not directions or len(directions.strip()) < MIN_DIRECTIONS_LEN:
+            return render_template("createRecipe.html", error=f"Directions are required to be over {MIN_DIRECTIONS_LEN} characters")
+
+        # Upper length validations for recipe fields
+        if len(name) > MAX_RECIPE_NAME_LEN:
+            return render_template("createRecipe.html", error=f"Recipe name must be at most {MAX_RECIPE_NAME_LEN} characters")
+        if len(ingredients) > MAX_INGREDIENTS_LEN:
+            return render_template("createRecipe.html", error=f"Ingredients must be at most {MAX_INGREDIENTS_LEN} characters")
+        if len(directions) > MAX_DIRECTIONS_LEN:
+            return render_template("createRecipe.html", error=f"Directions must be at most {MAX_DIRECTIONS_LEN} characters")
 
         cur = execute_cmd("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)",
                           [name, ingredients, directions, session["user_id"]])
@@ -178,10 +197,10 @@ def recipes():
     if q:
         pattern = f"%{q}%"
         rec = run_query(
-            "SELECT * FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC",
+            "SELECT id, name, ingredients, directions, user_id FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC",
             [pattern, pattern, pattern])
     else:
-        rec = run_query("SELECT * FROM recipes ORDER BY id DESC")
+        rec = run_query("SELECT id, name, ingredients, directions, user_id FROM recipes ORDER BY id DESC")
 
     ratings = {r[0]: get_avg_rating(r[0]) for r in rec}
 
@@ -250,6 +269,20 @@ def edit_recipe(recipe_id: int):
                                    recipe=(recipe_id, name, ingredients, directions))
         if not directions:
             return render_template("editRecipe.html", error="Directions are required",
+                                   recipe=(recipe_id, name, ingredients, directions))
+
+        # Upper length validations for recipe fields
+        if len(name) > MAX_RECIPE_NAME_LEN:
+            return render_template("editRecipe.html",
+                                   error=f"Recipe name must be at most {MAX_RECIPE_NAME_LEN} characters",
+                                   recipe=(recipe_id, name, ingredients, directions))
+        if len(ingredients) > MAX_INGREDIENTS_LEN:
+            return render_template("editRecipe.html",
+                                   error=f"Ingredients must be at most {MAX_INGREDIENTS_LEN} characters",
+                                   recipe=(recipe_id, name, ingredients, directions))
+        if len(directions) > MAX_DIRECTIONS_LEN:
+            return render_template("editRecipe.html",
+                                   error=f"Directions must be at most {MAX_DIRECTIONS_LEN} characters",
                                    recipe=(recipe_id, name, ingredients, directions))
 
         cur = execute_cmd("UPDATE recipes SET name = ?, ingredients = ?, directions = ? WHERE id = ? AND user_id = ?",
@@ -368,7 +401,7 @@ def add_comment():
     if not comment or not recipe_id:
         abort(400)
 
-    if len(comment) > 1000 or len(comment.strip()) == 0:
+    if len(comment) > MAX_COMMENT_LEN or len(comment.strip()) < MIN_COMMENT_LEN:
         abort(400)
 
     execute_cmd(
