@@ -146,7 +146,8 @@ def create_recipe():
             elif header[:4] == b"RIFF" and header[8:12] == b"WEBP":
                 mime_type = "image/webp"
             else:
-                return render_template("createRecipe.html", error="Unsupported image format. Use JPG, PNG, GIF, or WebP.")
+                return render_template("createRecipe.html",
+                                       error="Unsupported image format. Use JPG, PNG, GIF, or WebP.")
             image_bytes = data
 
         if not name or len(name.strip()) < 4:
@@ -208,7 +209,26 @@ def account():
     username = session.get("username", "User")
     my_recipes = run_query("SELECT id, name FROM recipes WHERE user_id = ? ORDER BY name", [user_id])
 
-    return render_template("account.html", username=username, recipes=my_recipes)
+    recipes_count = len(my_recipes)
+
+    avg_rating_row = run_query("""
+                               SELECT AVG(rt.rating)
+                               FROM ratings rt
+                                        JOIN recipes r ON rt.recipe_id = r.id
+                               WHERE r.user_id = ?
+                               """, [user_id])
+    avg_rating = avg_rating_row[0][0] if avg_rating_row and avg_rating_row[0][0] is not None else 0
+
+    comments_count_row = run_query("""
+                                   SELECT COUNT(*)
+                                   FROM comments c
+                                            JOIN recipes r ON c.recipe_id = r.id
+                                   WHERE r.user_id = ?
+                                   """, [user_id])
+    comments_count = comments_count_row[0][0] if comments_count_row else 0
+
+    return render_template("account.html", username=username, recipes=my_recipes,
+                           recipes_count=recipes_count, avg_rating=avg_rating, comments_count=comments_count)
 
 
 @app.route("/recipes/<int:recipe_id>/edit", methods=["GET", "POST"])
@@ -262,6 +282,11 @@ def rate():
     if rating < 1 or rating > 5:
         abort(400)
 
+    # Validation so that you can't rate your own recipes
+    author_check = run_query("SELECT user_id FROM recipes WHERE id = ? LIMIT 1", [recipe_id])
+    if author_check and author_check[0] and author_check[0][0] == session["user_id"]:
+        abort(403)
+
     user_id = session["user_id"]
 
     existing = run_query(
@@ -291,8 +316,11 @@ def recipe(recipe_id: int):
                r.name,
                r.ingredients,
                r.directions,
+               r.user_id                                                      AS author_id,
+               u.username                                                     AS author_name,
                EXISTS(SELECT 1 FROM recipe_images i WHERE i.recipe_id = r.id) AS has_image
         FROM recipes r
+                 JOIN users u ON u.id = r.user_id
         WHERE r.id = ?
         """,
         [recipe_id]
@@ -317,8 +345,17 @@ def recipe(recipe_id: int):
         [recipe_id]
     )
 
-    return render_template("recipe.html", recipe=result[0], avg_rating=rating[0], ratings_count=rating[1],
-                           user_rating=user_rating, comments=comments)
+    recipe_tuple = result[0]
+    author_id = recipe_tuple[4]
+    author_name = recipe_tuple[5]
+    return render_template("recipe.html",
+                           recipe=recipe_tuple,
+                           avg_rating=rating[0],
+                           ratings_count=rating[1],
+                           user_rating=user_rating,
+                           comments=comments,
+                           author_id=author_id,
+                           author_name=author_name)
 
 
 @app.route("/comment", methods=["POST"])
@@ -336,9 +373,10 @@ def add_comment():
 
     execute_cmd(
         "INSERT INTO comments (content, recipe_id, user_id) VALUES (?, ?, ?)",
-                [comment, recipe_id, session["user_id"]])
+        [comment, recipe_id, session["user_id"]])
 
     return redirect(f"/recipes/{recipe_id}")
+
 
 @app.route("/comment/delete", methods=["POST"])
 def delete_comment():
@@ -353,6 +391,7 @@ def delete_comment():
     execute_cmd("DELETE FROM comments WHERE id = ? AND recipe_id = ? AND user_id = ?", [comment_id, recipe_id, user_id])
 
     return redirect(f"/recipes/{recipe_id}")
+
 
 @app.route("/recipes/<int:recipe_id>/cover", methods=["GET"])
 def recipe_cover(recipe_id: int):

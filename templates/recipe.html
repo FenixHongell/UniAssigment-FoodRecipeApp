@@ -17,8 +17,11 @@
             <a href="/">Home</a>
         </div>
     </div>
+    <div class="muted" aria-label="Recipe author">
+            By {{ author_name }}{% if session.user_id == author_id %} (You) {% endif %}
+        </div>
 
-    {% if recipe[4] %}
+    {% if recipe[6] %}
     <figure class="cover">
         <img class="cover-image" src="/recipes/{{ recipe[0] }}/cover" alt="Cover image for {{ recipe[1] }}">
     </figure>
@@ -43,6 +46,7 @@
             </span>
         </div>
 
+        {% if session.user_id != author_id %}
         <form action="/rate" method="post" class="row wrap gap-8">
             <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
             <input type="hidden" name="recipe_id" value="{{ recipe[0] }}">
@@ -61,6 +65,9 @@
             <span class="muted">Your rating: {{ user_rating }}⭐</span>
             {% endif %}
         </form>
+        {% else %}
+        <p class="muted">You can’t rate your own recipe.</p>
+        {% endif %}
     </section>
 
     <section class="comments">

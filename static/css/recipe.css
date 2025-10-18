@@ -71,6 +71,10 @@ h1 {
     margin: 0;
 }
 
+.rating-section {
+    margin: 12px 0;
+}
+
 .rating-option {
     cursor: pointer;
 }

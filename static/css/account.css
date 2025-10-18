@@ -1,4 +1,10 @@
 :root {
+    --stat-gap: 12px;
+    --stat-card: #fff;
+    --stat-border: #e5e7eb;
+    --stat-bg: #f8fafc;
+    --stat-value: #111827;
+    --stat-label: #6b7280;
     --maxw: 720px;
 }
 
@@ -41,6 +47,37 @@
 .recipe-name {
     font-weight: 600;
     margin: 0;
+}
+
+.section.stats {
+    /* container styling if needed; kept minimal for now */
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--stat-gap);
+    margin: 16px 0 24px;
+    padding: 12px;
+    border: 1px solid var(--stat-border);
+    border-radius: 10px;
+    background: var(--stat-bg);
+}
+
+.stat {
+    text-align: center;
+    padding: 8px;
+}
+
+.stat .value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--stat-value);
+}
+
+.stat .label {
+    font-size: 0.85rem;
+    color: var(--stat-label);
 }
 
 .subtle {
