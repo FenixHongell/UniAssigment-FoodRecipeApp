@@ -75,6 +75,26 @@ h1 {
     gap: 8px;
 }
 
+.recipe-card .recipe-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+
+.recipe-card .excerpt {
+  margin-top: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
 .recipe-title {
     margin: 0;
     font-size: 1.05rem;

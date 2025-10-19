@@ -2,37 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Edit Recipe</title>
+    <title>Edit recipe</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Something about the dynamic routing messes up the CSS unless the paths are done like this -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/recipe-form.css') }}">
 </head>
 <body>
-<main class="card" role="main" aria-labelledby="edit-recipe-title">
-    <h1 id="edit-recipe-title">Edit Recipe</h1>
-    {% if error %}
-    <div class="error" role="alert" aria-live="polite">
-        {{ error }}
-    </div>
-    {% endif %}
+<main class="card">
+    <h1>Edit recipe</h1>
+
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
     <form action="/recipes/{{ recipe[0] }}/edit" method="post" novalidate>
         <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}">
+
         <div class="field">
-            <label for="name">Recipe name</label>
-            <input id="name" name="name" type="text" required value="{{ recipe[1] }}" />
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required value="{{ recipe[1] }}">
         </div>
+
+        <div class="field">
+            <label for="category_id">Category</label>
+            <select id="category_id" name="category_id" required>
+                {% for c in categories %}
+                    <option value="{{ c[0] }}" {% if selected_category_id == c[0] %}selected{% endif %}>{{ c[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
         <div class="field">
             <label for="ingredients">Ingredients</label>
             <textarea id="ingredients" name="ingredients" required>{{ recipe[2] }}</textarea>
         </div>
+
         <div class="field">
             <label for="directions">Directions</label>
             <textarea id="directions" name="directions" required>{{ recipe[3] }}</textarea>
         </div>
+
         <div class="actions">
-            <button type="submit">Save changes</button>
-            <a href="/account">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a class="btn btn-outline" href="/account">Cancel</a>
         </div>
     </form>
 </main>

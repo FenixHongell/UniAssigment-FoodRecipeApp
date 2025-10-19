@@ -3,13 +3,11 @@ import secrets
 from flask import Flask, render_template, request, redirect, session, abort, make_response
 
 from formatting import format_timestamp
-from helpers import execute_cmd, run_query, get_avg_rating, validate_credentials
+from helpers import execute_cmd, run_query, get_avg_rating, validate_credentials, validate_input_recipe
 
 app = Flask(__name__)
 
-# The things we do to not use javascript on the frontend smh, anyway this registers the function for use in templates
 app.jinja_env.globals["format_timestamp"] = format_timestamp
-# This is terrible practice, but this is a simple UNI project and I dont want to start using ENV variables. Might change later.
 app.config['SECRET_KEY'] = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
 
 app.config.update(
@@ -19,7 +17,6 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 7
 )
 
-# Length constraints
 MIN_USERNAME_LEN = 4
 MAX_USERNAME_LEN = 32
 MIN_PASSWORD_LEN = 8
@@ -34,7 +31,6 @@ MIN_DIRECTIONS_LEN = 10
 MAX_DIRECTIONS_LEN = 10000
 
 
-# Helper functions for authentication
 def require_login():
     if "user_id" not in session:
         print("redirecting to login")
@@ -84,14 +80,18 @@ def create_account():
 
         if not username or not password:
             return render_template("createAccount.html", error="Username and password are required")
-        elif len(username) < MIN_USERNAME_LEN:
-            return render_template("createAccount.html", error=f"Username must be at least {MIN_USERNAME_LEN} characters long")
-        elif len(password) < MIN_PASSWORD_LEN:
-            return render_template("createAccount.html", error=f"Password must be at least {MIN_PASSWORD_LEN} characters long")
-        elif len(username) > MAX_USERNAME_LEN:
-            return render_template("createAccount.html", error=f"Username must be at most {MAX_USERNAME_LEN} characters long")
-        elif len(password) > MAX_PASSWORD_LEN:
-            return render_template("createAccount.html", error=f"Password must be at most {MAX_PASSWORD_LEN} characters long")
+        if len(username) < MIN_USERNAME_LEN:
+            return render_template("createAccount.html",
+                                   error=f"Username must be at least {MIN_USERNAME_LEN} characters long")
+        if len(password) < MIN_PASSWORD_LEN:
+            return render_template("createAccount.html",
+                                   error=f"Password must be at least {MIN_PASSWORD_LEN} characters long")
+        if len(username) > MAX_USERNAME_LEN:
+            return render_template("createAccount.html",
+                                   error=f"Username must be at most {MAX_USERNAME_LEN} characters long")
+        if len(password) > MAX_PASSWORD_LEN:
+            return render_template("createAccount.html",
+                                   error=f"Password must be at most {MAX_PASSWORD_LEN} characters long")
 
         existing_user = run_query("SELECT id, username, password FROM users WHERE username = ?", [username])
 
@@ -145,14 +145,26 @@ def create_recipe():
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
 
-        # Save image if exists
+        try:
+            category_id = int(request.form.get('category_id') or 0)
+        except (TypeError, ValueError):
+            category_id = 0
+        cat_exists = run_query("SELECT id FROM categories WHERE id = ? LIMIT 1", [category_id])
+        if not cat_exists:
+            return render_template("createRecipe.html",
+                                   error="Invalid category selected",
+                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
+                                   selected_category_id=None)
+
         file = request.files.get('cover')
         image_bytes = None
         mime_type = None
         if file and file.filename:
             data = file.read()
             if len(data) > 5 * 1024 * 1024:
-                return render_template("createRecipe.html", error="Image too large (max 5MB)")
+                return render_template("createRecipe.html", error="Image too large (max 5MB)",
+                                       categories=run_query("SELECT id, name FROM categories ORDER BY name"),
+                                       selected_category_id=category_id)
             header = data[:12]
             if header.startswith(b"\xff\xd8\xff"):
                 mime_type = "image/jpeg"
@@ -164,26 +176,25 @@ def create_recipe():
                 mime_type = "image/webp"
             else:
                 return render_template("createRecipe.html",
-                                       error="Unsupported image format. Use JPG, PNG, GIF, or WebP.")
+                                       error="Unsupported image format. Use JPG, PNG, GIF, or WebP.",
+                                       categories=run_query("SELECT id, name FROM categories ORDER BY name"),
+                                       selected_category_id=category_id)
             image_bytes = data
 
-        if not name or len(name.strip()) < MIN_RECIPE_NAME_LEN:
-            return render_template("createRecipe.html", error=f"Recipe name is required to be over {MIN_RECIPE_NAME_LEN} characters")
-        if not ingredients or len(ingredients.strip()) < MIN_INGREDIENTS_LEN:
-            return render_template("createRecipe.html", error=f"Ingredients are required to be over {MIN_INGREDIENTS_LEN} characters")
-        if not directions or len(directions.strip()) < MIN_DIRECTIONS_LEN:
-            return render_template("createRecipe.html", error=f"Directions are required to be over {MIN_DIRECTIONS_LEN} characters")
+        has_issue, error_message = validate_input_recipe(name, ingredients, directions, MIN_RECIPE_NAME_LEN,
+                                                         MAX_RECIPE_NAME_LEN, MIN_INGREDIENTS_LEN, MAX_INGREDIENTS_LEN,
+                                                         MIN_DIRECTIONS_LEN, MAX_DIRECTIONS_LEN)
 
-        # Upper length validations for recipe fields
-        if len(name) > MAX_RECIPE_NAME_LEN:
-            return render_template("createRecipe.html", error=f"Recipe name must be at most {MAX_RECIPE_NAME_LEN} characters")
-        if len(ingredients) > MAX_INGREDIENTS_LEN:
-            return render_template("createRecipe.html", error=f"Ingredients must be at most {MAX_INGREDIENTS_LEN} characters")
-        if len(directions) > MAX_DIRECTIONS_LEN:
-            return render_template("createRecipe.html", error=f"Directions must be at most {MAX_DIRECTIONS_LEN} characters")
+        if has_issue:
+            return render_template("createRecipe.html",
+                                   error=error_message,
+                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
+                                   selected_category_id=category_id)
 
-        cur = execute_cmd("INSERT INTO recipes (name, ingredients, directions, user_id) VALUES (?, ?, ?, ?)",
-                          [name, ingredients, directions, session["user_id"]])
+        cur = execute_cmd(
+            "INSERT INTO recipes (name, ingredients, directions, user_id, category_id) VALUES (?, ?, ?, ?, ?)",
+            [name, ingredients, directions, session["user_id"], category_id]
+        )
         recipe_id = cur.lastrowid
 
         if image_bytes is not None:
@@ -192,25 +203,43 @@ def create_recipe():
 
         return redirect("/")
 
-    return render_template("createRecipe.html")
+    cats = run_query("SELECT id, name FROM categories ORDER BY name")
+    return render_template("createRecipe.html", categories=cats, selected_category_id=None)
 
 
 @app.route("/recipes")
 def recipes():
     require_login()
     q = request.args.get("q", "", type=str)
-    # Search functionality
+    cat_id = request.args.get("cat", "", type=str)
+
+    params = []
+    where_clauses = []
     if q:
         pattern = f"%{q}%"
-        rec = run_query(
-            "SELECT id, name, ingredients, directions, user_id FROM recipes WHERE name LIKE ? OR ingredients LIKE ? OR directions LIKE ? ORDER BY id DESC",
-            [pattern, pattern, pattern])
-    else:
-        rec = run_query("SELECT id, name, ingredients, directions, user_id FROM recipes ORDER BY id DESC")
+        where_clauses.append("(r.name LIKE ? OR r.ingredients LIKE ? OR r.directions LIKE ?)")
+        params.extend([pattern, pattern, pattern])
+    if cat_id and cat_id.isdigit():
+        where_clauses.append("r.category_id = ?")
+        params.append(int(cat_id))
+
+    where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+    rec = run_query(
+        f"""
+        SELECT r.id, r.name, r.ingredients, r.directions, r.user_id, r.category_id, c.name AS category_name
+        FROM recipes r
+        JOIN categories c ON c.id = r.category_id
+        {where_sql}
+        ORDER BY r.id DESC
+        """,
+        params
+    )
 
     ratings = {r[0]: get_avg_rating(r[0]) for r in rec}
+    cats = run_query("SELECT id, name FROM categories ORDER BY name")
 
-    return render_template("recipes.html", recipes=rec, q=q, ratings=ratings)
+    return render_template("recipes.html", recipes=rec, q=q, ratings=ratings,
+                           categories=cats, selected_cat_id=(int(cat_id) if str(cat_id).isdigit() else None))
 
 
 @app.route("/recipes/delete", methods=["POST"])
@@ -266,45 +295,46 @@ def edit_recipe(recipe_id: int):
         name = request.form.get("name", "").strip()
         ingredients = request.form.get("ingredients", "").strip()
         directions = request.form.get("directions", "").strip()
+        try:
+            category_id = int(request.form.get('category_id') or 0)
+        except (TypeError, ValueError):
+            category_id = 0
 
-        if not name:
-            return render_template("editRecipe.html", error="Recipe name is required",
-                                   recipe=(recipe_id, name, ingredients, directions))
-        if not ingredients:
-            return render_template("editRecipe.html", error="Ingredients are required",
-                                   recipe=(recipe_id, name, ingredients, directions))
-        if not directions:
-            return render_template("editRecipe.html", error="Directions are required",
-                                   recipe=(recipe_id, name, ingredients, directions))
+        has_issue, error_message = validate_input_recipe(name, ingredients, directions, MIN_RECIPE_NAME_LEN,
+                                                         MAX_RECIPE_NAME_LEN, MIN_INGREDIENTS_LEN, MAX_INGREDIENTS_LEN,
+                                                         MIN_DIRECTIONS_LEN, MAX_DIRECTIONS_LEN)
 
-        # Upper length validations for recipe fields
-        if len(name) > MAX_RECIPE_NAME_LEN:
+        if has_issue:
             return render_template("editRecipe.html",
-                                   error=f"Recipe name must be at most {MAX_RECIPE_NAME_LEN} characters",
-                                   recipe=(recipe_id, name, ingredients, directions))
-        if len(ingredients) > MAX_INGREDIENTS_LEN:
-            return render_template("editRecipe.html",
-                                   error=f"Ingredients must be at most {MAX_INGREDIENTS_LEN} characters",
-                                   recipe=(recipe_id, name, ingredients, directions))
-        if len(directions) > MAX_DIRECTIONS_LEN:
-            return render_template("editRecipe.html",
-                                   error=f"Directions must be at most {MAX_DIRECTIONS_LEN} characters",
-                                   recipe=(recipe_id, name, ingredients, directions))
+                                   error=error_message,
+                                   recipe=(recipe_id, name, ingredients, directions, category_id),
+                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
+                                   selected_category_id=category_id)
 
-        cur = execute_cmd("UPDATE recipes SET name = ?, ingredients = ?, directions = ? WHERE id = ? AND user_id = ?",
-                          [name, ingredients, directions, recipe_id, user_id])
+        cat_exists = run_query("SELECT id FROM categories WHERE id = ? LIMIT 1", [category_id])
+        if not cat_exists:
+            return render_template("editRecipe.html", error="Invalid category selected",
+                                   recipe=(recipe_id, name, ingredients, directions, category_id),
+                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
+                                   selected_category_id=category_id)
+
+        cur = execute_cmd(
+            "UPDATE recipes SET name = ?, ingredients = ?, directions = ?, category_id = ? WHERE id = ? AND user_id = ?",
+            [name, ingredients, directions, category_id, recipe_id, user_id])
         if cur.rowcount == 0:
             abort(404)
 
         return redirect("/account")
 
-    result = run_query("SELECT id, name, ingredients, directions FROM recipes WHERE id = ? AND user_id = ?",
-                       [recipe_id, user_id])
+    result = run_query(
+        "SELECT id, name, ingredients, directions, category_id FROM recipes WHERE id = ? AND user_id = ?",
+        [recipe_id, user_id])
 
     if len(result) == 0:
         abort(404)
 
-    return render_template("editRecipe.html", recipe=result[0])
+    cats = run_query("SELECT id, name FROM categories ORDER BY name")
+    return render_template("editRecipe.html", recipe=result[0], categories=cats, selected_category_id=result[0][4])
 
 
 @app.route("/rate", methods=["POST"])
@@ -321,7 +351,6 @@ def rate():
     if rating < 1 or rating > 5:
         abort(400)
 
-    # Validation so that you can't rate your own recipes
     author_check = run_query("SELECT user_id FROM recipes WHERE id = ? LIMIT 1", [recipe_id])
     if author_check and author_check[0] and author_check[0][0] == session["user_id"]:
         abort(403)
@@ -357,9 +386,12 @@ def recipe(recipe_id: int):
                r.directions,
                r.user_id                                                      AS author_id,
                u.username                                                     AS author_name,
-               EXISTS(SELECT 1 FROM recipe_images i WHERE i.recipe_id = r.id) AS has_image
+               EXISTS(SELECT 1 FROM recipe_images i WHERE i.recipe_id = r.id) AS has_image,
+               r.category_id,
+               c.name                                                         AS category_name
         FROM recipes r
                  JOIN users u ON u.id = r.user_id
+                 JOIN categories c ON c.id = r.category_id
         WHERE r.id = ?
         """,
         [recipe_id]
@@ -387,6 +419,7 @@ def recipe(recipe_id: int):
     recipe_tuple = result[0]
     author_id = recipe_tuple[4]
     author_name = recipe_tuple[5]
+    category_name = recipe_tuple[8]
     return render_template("recipe.html",
                            recipe=recipe_tuple,
                            avg_rating=rating[0],
@@ -394,7 +427,8 @@ def recipe(recipe_id: int):
                            user_rating=user_rating,
                            comments=comments,
                            author_id=author_id,
-                           author_name=author_name)
+                           author_name=author_name,
+                           category_name=category_name)
 
 
 @app.route("/comment", methods=["POST"])
@@ -441,7 +475,6 @@ def recipe_cover(recipe_id: int):
     data: bytes = row[0][0]
     ctype = row[0][1] or "application/octet-stream"
 
-    # Fallback if mime_type missing
     if ctype == "application/octet-stream":
         if data.startswith(b"\xff\xd8\xff"):
             ctype = "image/jpeg"

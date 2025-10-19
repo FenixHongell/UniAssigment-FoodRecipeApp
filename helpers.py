@@ -94,3 +94,35 @@ def validate_credentials(username, password):
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     result = run_query("SELECT * FROM users WHERE username = ? AND password = ?", [username, hashed_password])
     return None if len(result) == 0 else result[0]
+
+
+def validate_input_recipe(name, ingredients, directions, min_recipe_name_len, max_recipe_name_len, min_ingredients_len,
+                          max_ingredients_len, min_directions_len, max_directions_len):
+    has_issue = False
+    error_message = ""
+
+    if not name or len(name.strip()) < min_recipe_name_len:
+        has_issue = True
+        error_message = f"Recipe name is required to be over {min_recipe_name_len} characters"
+
+    if not ingredients or len(ingredients.strip()) < min_ingredients_len:
+        has_issue = True
+        error_message = f"Ingredients are required to be over {min_ingredients_len} characters"
+
+    if not directions or len(directions.strip()) < min_directions_len:
+        has_issue = True
+        error_message = f"Directions are required to be over {min_directions_len} characters"
+
+    if len(name) > max_recipe_name_len:
+        has_issue = True
+        error_message = f"Recipe name must be at most {max_recipe_name_len} characters"
+
+    if len(ingredients) > max_ingredients_len:
+        has_issue = True
+        error_message = f"Ingredients must be at most {max_ingredients_len} characters"
+
+    if len(directions) > max_directions_len:
+        has_issue = True
+        error_message = f"Directions must be at most {max_directions_len} characters"
+
+    return has_issue, error_message

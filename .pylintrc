@@ -39,3 +39,4 @@ max-args=10
 max-locals=25
 max-branches=15
 max-returns=8
+max-positional-arguments=10
