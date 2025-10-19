@@ -33,6 +33,10 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
    - `sqlite3 database.db < schema.sql`
    - `sqlite3 database.db < init.sql`
 
+4. Optional:
+    - Add some data by using the following command:
+      - `sqlite3 database.db < mock-data.sql`
+
 ## Running the app
 - Start the server
    - `flask run`
@@ -46,6 +50,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 
 ## Notes
 - To reset the database, delete the `database.db` file and setup step 3 again.
+- A report on the code quality and performance can be found in [report.md](report.md).
 
 ## Troubleshooting
 - Flask not found: Ensure your virtual environment is activated and `pip install flask` has been run.

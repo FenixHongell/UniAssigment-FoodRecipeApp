@@ -5,12 +5,10 @@
 - Static analysis: Pylint score 10.00/10 (no errors or warnings).
 
 ## Dataset Scale and Coverage
-- Categories: 30+ covering meal types, cuisines, dietary tags, and techniques.
-- Users: 25 demo users for authoring and rating variety.
-- Recipes: 40+ entries, each linked to a valid category and author.
-- Ratings: Multiple per recipe to exercise averages and counts.
-- Comments: Multiple per recipe to test pagination-like loads and ordering.
-- Recipe images: Optional coverage tested; routes handle presence/absence cleanly.
+- The website is able to handle a large dataset with no issues.
+- The website uses paginated results for the /recipes endpoint, and the /recipes/<id> endpoint is able to handle large amounts of comments and ratings.
+- A sample dataset is provided in the repo: `mock-data.sql`
+
 
 ## Functional Validation
 - Authentication and CSRF: Verified flows for create, edit, comment, rate; enforcement remains intact.
