@@ -14,6 +14,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 - Show users recipies ✅
 - Add/Show recipe ratings ✅
 - Show top recipes ✅
+- Recipe categories ✅
 
 ## Requirements
 - Python 3.13+
@@ -30,6 +31,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 
 3. Initialize the database
    - `sqlite3 database.db < schema.sql`
+   - `sqlite3 database.db < init.sql`
 
 ## Running the app
 - Start the server
@@ -43,7 +45,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
   - Entire project: `pylint .`
 
 ## Notes
-- To reset the database, delete the `database.db` file and run the `sqlite3 database.db < schema.sql` command again.
+- To reset the database, delete the `database.db` file and setup step 3 again.
 
 ## Troubleshooting
 - Flask not found: Ensure your virtual environment is activated and `pip install flask` has been run.
