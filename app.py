@@ -212,6 +212,8 @@ def recipes():
     require_login()
     q = request.args.get("q", "", type=str)
     cat_id = request.args.get("cat", "", type=str)
+    page = request.args.get("page", 1, type=int) or 1
+    per_page = 10
 
     params = []
     where_clauses = []
@@ -224,6 +226,25 @@ def recipes():
         params.append(int(cat_id))
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+    # Count total results for pagination
+    total_row = run_query(
+        f"""
+        SELECT COUNT(*)
+        FROM recipes r
+        JOIN categories c ON c.id = r.category_id
+        {where_sql}
+        """,
+        params
+    )
+    total_count = total_row[0][0] if total_row else 0
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+
+    page = max(page, 1)
+    page = min(page, total_pages)
+
+    offset = (page - 1) * per_page
+
     rec = run_query(
         f"""
         SELECT r.id, r.name, r.ingredients, r.directions, r.user_id, r.category_id, c.name AS category_name
@@ -231,15 +252,31 @@ def recipes():
         JOIN categories c ON c.id = r.category_id
         {where_sql}
         ORDER BY r.id DESC
+        LIMIT ? OFFSET ?
         """,
-        params
+        params + [per_page, offset]
     )
 
     ratings = {r[0]: get_avg_rating(r[0]) for r in rec}
     cats = run_query("SELECT id, name FROM categories ORDER BY name")
 
-    return render_template("recipes.html", recipes=rec, q=q, ratings=ratings,
-                           categories=cats, selected_cat_id=(int(cat_id) if str(cat_id).isdigit() else None))
+    start_idx = (page - 1) * per_page + 1 if total_count > 0 else 0
+    end_idx = min(page * per_page, total_count)
+
+    return render_template(
+        "recipes.html",
+        recipes=rec,
+        q=q,
+        ratings=ratings,
+        categories=cats,
+        selected_cat_id=(int(cat_id) if str(cat_id).isdigit() else None),
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+        total_count=total_count,
+        start_idx=start_idx,
+        end_idx=end_idx,
+    )
 
 
 @app.route("/recipes/delete", methods=["POST"])

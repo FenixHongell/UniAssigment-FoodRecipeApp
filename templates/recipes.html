@@ -29,8 +29,8 @@
     </form>
 
     <div class="results-info">
-        {% if recipes %}
-            {% if q %}Showing {{ recipes|length }} result(s) for “{{ q }}”{% else %}Showing {{ recipes|length }} recipe(s){% endif %}
+        {% if total_count %}
+            {% if q %}Showing {{ start_idx }}–{{ end_idx }} of {{ total_count }} result(s) for “{{ q }}”{% else %}Showing {{ start_idx }}–{{ end_idx }} of {{ total_count }} recipe(s){% endif %}
         {% else %}
             {% if q %}No results for “{{ q }}”.{% else %}No recipes found.{% endif %}
         {% endif %}
@@ -55,6 +55,20 @@
         </article>
         {% endfor %}
     </section>
+
+    {% if total_pages and total_pages > 1 %}
+    {% set parts = [] %}
+    {% if q %}{% set _ = parts.append('q=' ~ (q|urlencode)) %}{% endif %}
+    {% if selected_cat_id %}{% set _ = parts.append('cat=' ~ selected_cat_id) %}{% endif %}
+    {% set base_qs = parts|join('&') %}
+    <nav class="pagination" aria-label="Pagination" style="display:flex;gap:.5rem;justify-content:center;margin-top:1rem;">
+        <a class="btn btn-outline" href="/recipes?{{ base_qs }}{% if base_qs %}&{% endif %}page=1" aria-label="First page" {% if page == 1 %}aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.5"{% endif %}>« First</a>
+        <a class="btn btn-outline" href="/recipes?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ page-1 }}" aria-label="Previous page" {% if page == 1 %}aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.5"{% endif %}>‹ Prev</a>
+        <span class="muted" aria-current="page" style="align-self:center;">Page {{ page }} of {{ total_pages }}</span>
+        <a class="btn btn-outline" href="/recipes?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ page+1 }}" aria-label="Next page" {% if page == total_pages %}aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.5"{% endif %}>Next ›</a>
+        <a class="btn btn-outline" href="/recipes?{{ base_qs }}{% if base_qs %}&{% endif %}page={{ total_pages }}" aria-label="Last page" {% if page == total_pages %}aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.5"{% endif %}>Last »</a>
+    </nav>
+    {% endif %}
 </main>
 </body>
 </html>
