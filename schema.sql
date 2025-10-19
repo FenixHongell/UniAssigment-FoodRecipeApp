@@ -50,3 +50,16 @@ CREATE TABLE recipe_images (
     mime_type TEXT,
     FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
+
+-- Speed up filtering and joining recipes by category (used on /recipes with category filter)
+CREATE INDEX IF NOT EXISTS idx_recipes_category ON recipes(category_id);
+
+-- Speed up fetching a user's recipes (used on /account and for authorization checks)
+CREATE INDEX IF NOT EXISTS idx_recipes_user ON recipes(user_id);
+
+-- Speed up average/rating lookups and updates per recipe, and uniqueness checks by (recipe_id, user_id)
+CREATE INDEX IF NOT EXISTS idx_ratings_recipe ON ratings(recipe_id);
+CREATE INDEX IF NOT EXISTS idx_ratings_recipe_user ON ratings(recipe_id, user_id);
+
+-- Speed up listing and deleting comments per recipe
+CREATE INDEX IF NOT EXISTS idx_comments_recipe ON comments(recipe_id);
