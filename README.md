@@ -15,6 +15,7 @@ This is a recipe app made using Flask, Pylint, Python & SQLite for University.
 - Add/Show recipe ratings ✅
 - Show top recipes ✅
 - Recipe categories ✅
+- Show user stats ✅
 
 ## Requirements
 - Python 3.13+

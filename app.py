@@ -1,9 +1,10 @@
-import hashlib
-import secrets
 from flask import Flask, render_template, request, redirect, session, abort, make_response
 
 from formatting import format_timestamp
-from helpers import execute_cmd, run_query, get_avg_rating, validate_credentials, validate_input_recipe
+from helpers import execute_cmd, run_query, get_avg_rating
+from actions import (create_account_action, signin_action, logout_action, create_recipe_post_action,
+                     edit_recipe_post_action, rate_action, add_comment_action,
+                     delete_comment_action, delete_recipe_action)
 
 app = Flask(__name__)
 
@@ -78,30 +79,14 @@ def create_account():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        if not username or not password:
-            return render_template("createAccount.html", error="Username and password are required")
-        if len(username) < MIN_USERNAME_LEN:
-            return render_template("createAccount.html",
-                                   error=f"Username must be at least {MIN_USERNAME_LEN} characters long")
-        if len(password) < MIN_PASSWORD_LEN:
-            return render_template("createAccount.html",
-                                   error=f"Password must be at least {MIN_PASSWORD_LEN} characters long")
-        if len(username) > MAX_USERNAME_LEN:
-            return render_template("createAccount.html",
-                                   error=f"Username must be at most {MAX_USERNAME_LEN} characters long")
-        if len(password) > MAX_PASSWORD_LEN:
-            return render_template("createAccount.html",
-                                   error=f"Password must be at most {MAX_PASSWORD_LEN} characters long")
-
-        existing_user = run_query("SELECT id, username, password FROM users WHERE username = ?", [username])
-
-        if len(existing_user) > 0:
-            return render_template("createAccount.html", error="Username already exists")
-
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        execute_cmd("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashed_password])
-
-        return redirect("/login")
+        return create_account_action(
+            username=username,
+            password=password,
+            min_username_len=MIN_USERNAME_LEN,
+            max_username_len=MAX_USERNAME_LEN,
+            min_password_len=MIN_PASSWORD_LEN,
+            max_password_len=MAX_PASSWORD_LEN,
+        )
 
     return render_template("createAccount.html")
 
@@ -115,24 +100,14 @@ def signin():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        user = validate_credentials(username, password)
-
-        if not user:
-            return render_template("login.html", error="Invalid username or password")
-
-        session["user_id"] = user[0]
-        session["username"] = user[1]
-        session["csrf_token"] = secrets.token_hex(16)
-
-        return redirect("/")
+        return signin_action(username, password)
 
     return render_template("login.html")
 
 
 @app.route("/logout")
 def logout():
-    session.clear()
-    return redirect("/")
+    return logout_action()
 
 
 @app.route("/create_recipe", methods=["GET", "POST"])
@@ -141,67 +116,14 @@ def create_recipe():
 
     if request.method == "POST":
         check_csrf()
-        name = request.form.get('name')
-        ingredients = request.form.get('ingredients')
-        directions = request.form.get('directions')
-
-        try:
-            category_id = int(request.form.get('category_id') or 0)
-        except (TypeError, ValueError):
-            category_id = 0
-        cat_exists = run_query("SELECT id FROM categories WHERE id = ? LIMIT 1", [category_id])
-        if not cat_exists:
-            return render_template("createRecipe.html",
-                                   error="Invalid category selected",
-                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
-                                   selected_category_id=None)
-
-        file = request.files.get('cover')
-        image_bytes = None
-        mime_type = None
-        if file and file.filename:
-            data = file.read()
-            if len(data) > 5 * 1024 * 1024:
-                return render_template("createRecipe.html", error="Image too large (max 5MB)",
-                                       categories=run_query("SELECT id, name FROM categories ORDER BY name"),
-                                       selected_category_id=category_id)
-            header = data[:12]
-            if header.startswith(b"\xff\xd8\xff"):
-                mime_type = "image/jpeg"
-            elif header.startswith(b"\x89PNG\r\n\x1a\n"):
-                mime_type = "image/png"
-            elif header.startswith(b"GIF87a") or header.startswith(b"GIF89a"):
-                mime_type = "image/gif"
-            elif header[:4] == b"RIFF" and header[8:12] == b"WEBP":
-                mime_type = "image/webp"
-            else:
-                return render_template("createRecipe.html",
-                                       error="Unsupported image format. Use JPG, PNG, GIF, or WebP.",
-                                       categories=run_query("SELECT id, name FROM categories ORDER BY name"),
-                                       selected_category_id=category_id)
-            image_bytes = data
-
-        has_issue, error_message = validate_input_recipe(name, ingredients, directions, MIN_RECIPE_NAME_LEN,
-                                                         MAX_RECIPE_NAME_LEN, MIN_INGREDIENTS_LEN, MAX_INGREDIENTS_LEN,
-                                                         MIN_DIRECTIONS_LEN, MAX_DIRECTIONS_LEN)
-
-        if has_issue:
-            return render_template("createRecipe.html",
-                                   error=error_message,
-                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
-                                   selected_category_id=category_id)
-
-        cur = execute_cmd(
-            "INSERT INTO recipes (name, ingredients, directions, user_id, category_id) VALUES (?, ?, ?, ?, ?)",
-            [name, ingredients, directions, session["user_id"], category_id]
+        return create_recipe_post_action(
+            MIN_RECIPE_NAME_LEN,
+            MAX_RECIPE_NAME_LEN,
+            MIN_INGREDIENTS_LEN,
+            MAX_INGREDIENTS_LEN,
+            MIN_DIRECTIONS_LEN,
+            MAX_DIRECTIONS_LEN,
         )
-        recipe_id = cur.lastrowid
-
-        if image_bytes is not None:
-            execute_cmd("INSERT OR REPLACE INTO recipe_images (recipe_id, image, mime_type) VALUES (?, ?, ?)",
-                        [recipe_id, image_bytes, mime_type])
-
-        return redirect("/")
 
     cats = run_query("SELECT id, name FROM categories ORDER BY name")
     return render_template("createRecipe.html", categories=cats, selected_category_id=None)
@@ -283,14 +205,7 @@ def recipes():
 def delete_recipe():
     require_login()
     check_csrf()
-    recipe_id = request.form.get("recipe_id", type=int)
-    if not recipe_id:
-        abort(400)
-    user_id = session["user_id"]
-
-    execute_cmd("DELETE FROM recipes WHERE id = ? AND user_id = ?", [recipe_id, user_id])
-
-    return redirect("/account")
+    return delete_recipe_action()
 
 
 @app.route("/account", methods=["GET"])
@@ -329,39 +244,15 @@ def edit_recipe(recipe_id: int):
 
     if request.method == "POST":
         check_csrf()
-        name = request.form.get("name", "").strip()
-        ingredients = request.form.get("ingredients", "").strip()
-        directions = request.form.get("directions", "").strip()
-        try:
-            category_id = int(request.form.get('category_id') or 0)
-        except (TypeError, ValueError):
-            category_id = 0
-
-        has_issue, error_message = validate_input_recipe(name, ingredients, directions, MIN_RECIPE_NAME_LEN,
-                                                         MAX_RECIPE_NAME_LEN, MIN_INGREDIENTS_LEN, MAX_INGREDIENTS_LEN,
-                                                         MIN_DIRECTIONS_LEN, MAX_DIRECTIONS_LEN)
-
-        if has_issue:
-            return render_template("editRecipe.html",
-                                   error=error_message,
-                                   recipe=(recipe_id, name, ingredients, directions, category_id),
-                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
-                                   selected_category_id=category_id)
-
-        cat_exists = run_query("SELECT id FROM categories WHERE id = ? LIMIT 1", [category_id])
-        if not cat_exists:
-            return render_template("editRecipe.html", error="Invalid category selected",
-                                   recipe=(recipe_id, name, ingredients, directions, category_id),
-                                   categories=run_query("SELECT id, name FROM categories ORDER BY name"),
-                                   selected_category_id=category_id)
-
-        cur = execute_cmd(
-            "UPDATE recipes SET name = ?, ingredients = ?, directions = ?, category_id = ? WHERE id = ? AND user_id = ?",
-            [name, ingredients, directions, category_id, recipe_id, user_id])
-        if cur.rowcount == 0:
-            abort(404)
-
-        return redirect("/account")
+        return edit_recipe_post_action(
+            recipe_id,
+            MIN_RECIPE_NAME_LEN,
+            MAX_RECIPE_NAME_LEN,
+            MIN_INGREDIENTS_LEN,
+            MAX_INGREDIENTS_LEN,
+            MIN_DIRECTIONS_LEN,
+            MAX_DIRECTIONS_LEN,
+        )
 
     result = run_query(
         "SELECT id, name, ingredients, directions, category_id FROM recipes WHERE id = ? AND user_id = ?",
@@ -379,37 +270,7 @@ def rate():
     require_login()
     check_csrf()
 
-    recipe_id = request.form.get("recipe_id", type=int)
-    rating = request.form.get("rating", type=int)
-
-    if not recipe_id or rating is None:
-        abort(400)
-
-    if rating < 1 or rating > 5:
-        abort(400)
-
-    author_check = run_query("SELECT user_id FROM recipes WHERE id = ? LIMIT 1", [recipe_id])
-    if author_check and author_check[0] and author_check[0][0] == session["user_id"]:
-        abort(403)
-
-    user_id = session["user_id"]
-
-    existing = run_query(
-        "SELECT id FROM ratings WHERE recipe_id = ? AND user_id = ? LIMIT 1",
-        [recipe_id, user_id]
-    )
-    if existing:
-        execute_cmd(
-            "UPDATE ratings SET rating = ? WHERE recipe_id = ? AND user_id = ?",
-            [rating, recipe_id, user_id]
-        )
-    else:
-        execute_cmd(
-            "INSERT INTO ratings (rating, recipe_id, user_id) VALUES (?, ?, ?)",
-            [rating, recipe_id, user_id]
-        )
-
-    return redirect(f"/recipes/{recipe_id}")
+    return rate_action()
 
 
 @app.route("/recipes/<int:recipe_id>", methods=["GET"])
@@ -473,34 +334,14 @@ def add_comment():
     require_login()
     check_csrf()
 
-    recipe_id = request.form.get("recipe_id", type=int)
-    comment = request.form.get("content", "").strip()
-    if not comment or not recipe_id:
-        abort(400)
-
-    if len(comment) > MAX_COMMENT_LEN or len(comment.strip()) < MIN_COMMENT_LEN:
-        abort(400)
-
-    execute_cmd(
-        "INSERT INTO comments (content, recipe_id, user_id) VALUES (?, ?, ?)",
-        [comment, recipe_id, session["user_id"]])
-
-    return redirect(f"/recipes/{recipe_id}")
+    return add_comment_action(MIN_COMMENT_LEN, MAX_COMMENT_LEN)
 
 
 @app.route("/comment/delete", methods=["POST"])
 def delete_comment():
     require_login()
     check_csrf()
-    recipe_id = request.form.get("recipe_id", type=int)
-    comment_id = request.form.get("comment_id", type=int)
-    if not recipe_id or not comment_id:
-        abort(400)
-    user_id = session["user_id"]
-
-    execute_cmd("DELETE FROM comments WHERE id = ? AND recipe_id = ? AND user_id = ?", [comment_id, recipe_id, user_id])
-
-    return redirect(f"/recipes/{recipe_id}")
+    return delete_comment_action()
 
 
 @app.route("/recipes/<int:recipe_id>/cover", methods=["GET"])
