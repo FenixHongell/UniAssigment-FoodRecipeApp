@@ -92,7 +92,7 @@ def validate_credentials(username, password):
     :rtype: dict or None
     """
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    result = run_query("SELECT * FROM users WHERE username = ? AND password = ?", [username, hashed_password])
+    result = run_query("SELECT id, username, password FROM users WHERE username = ? AND password = ?", [username, hashed_password])
     return None if len(result) == 0 else result[0]
 
 
