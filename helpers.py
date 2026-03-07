@@ -31,6 +31,10 @@ def execute_cmd(cmd, params=None):
     close_connection(db)
     return result
 
+def create_log(message):
+    execute_cmd("INSERT INTO logs (message) VALUES (?)", [message]);
+
+
 def run_query(cmd, params=None, no_factory=False):
     """
     Executes a SQL query against the database and returns the result. Establishes a
@@ -91,8 +95,10 @@ def validate_credentials(username, password):
         otherwise None.
     :rtype: dict or None
     """
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    result = run_query("SELECT id, username, password FROM users WHERE username = ? AND password = ?", [username, hashed_password])
+    # Hash fix
+    # hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    # result = run_query("SELECT id, username, password FROM users WHERE username = ? AND password = ?", [username, hashed_password])
+    result = run_query("SELECT id, username, password FROM users WHERE username = ? AND password = ?", [username, password])
     return None if len(result) == 0 else result[0]
 
 

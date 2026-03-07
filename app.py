@@ -39,12 +39,14 @@ def require_login():
 
 
 def check_csrf():
-    if "csrf_token" not in request.form:
-        print("csrf token missing")
-        abort(403)
-    if request.form["csrf_token"] != session["csrf_token"]:
-        print("csrf token mismatch")
-        abort(403)
+    pass
+    # CSRF vulnerability
+    #if "csrf_token" not in request.form:
+    #    print("csrf token missing")
+    #    abort(403)
+    #if request.form["csrf_token"] != session["csrf_token"]:
+    #    print("csrf token mismatch")
+    #    abort(403)
 
 
 def add_visits():
@@ -203,8 +205,10 @@ def recipes():
 
 @app.route("/recipes/delete", methods=["POST"])
 def delete_recipe():
-    require_login()
-    check_csrf()
+
+    # Issue 1. Broken access control for deleting recipe.
+    # require_login()
+    # check_csrf()
     return delete_recipe_action()
 
 

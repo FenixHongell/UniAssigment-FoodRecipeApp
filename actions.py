@@ -6,7 +6,7 @@ from typing import Optional
 
 from flask import render_template, request, redirect, session, abort
 
-from helpers import execute_cmd, run_query, validate_credentials, validate_input_recipe
+from helpers import execute_cmd, run_query, validate_credentials, validate_input_recipe, create_log
 
 
 def create_account_action(
@@ -28,12 +28,16 @@ def create_account_action(
     if len(password) > max_password_len:
         return render_template("createAccount.html", error=f"Password must be at most {max_password_len} characters long")
 
-    existing_user = run_query("SELECT id, username, password FROM users WHERE username = ?", [username])
+    # Injection fix
+    # existing_user = run_query("SELECT id, username, password FROM users WHERE username = ?", [username])
+    existing_user = run_query("SELECT id, username, password FROM users WHERE username = " + username, [])
     if len(existing_user) > 0:
         return render_template("createAccount.html", error="Username already exists")
 
-    hashed_password = hashlib.sha256(password.encode()).hexdigest()
-    execute_cmd("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashed_password])
+    # Hash fix,
+    # hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    # execute_cmd("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashed_password])
+    execute_cmd("INSERT INTO users (username, password) VALUES (?, ?)", [username, password])
 
     return redirect("/login")
 
@@ -41,11 +45,16 @@ def create_account_action(
 def signin_action(username: Optional[str], password: Optional[str]):
     user = validate_credentials(username, password)
     if not user:
+        # LOG FIX
+        # create_log("FAILED LOGIN: " + username + "")
         return render_template("login.html", error="Invalid username or password")
 
     session["user_id"] = user[0]
     session["username"] = user[1]
     session["csrf_token"] = secrets.token_hex(16)
+
+    #LOG FIX
+    # create_log("SUCCESSFUL LOGIN: " + username + " - " + user[0])
 
     return redirect("/")
 

@@ -3,6 +3,12 @@ CREATE TABLE visits (
   last_visit TEXT
 );
 
+CREATE TABLE logs (
+    id INTEGER PRIMARY KEY,
+    message TEXT,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch())
+)
+
 CREATE TABLE users (
   id INTEGER PRIMARY KEY,
   username TEXT,
