@@ -30,7 +30,7 @@ def create_account_action(
 
     # Injection fix
     # existing_user = run_query("SELECT id, username, password FROM users WHERE username = ?", [username])
-    existing_user = run_query("SELECT id, username, password FROM users WHERE username = " + username, [])
+    existing_user = run_query("SELECT id, username, password FROM users WHERE username = '" + username + "'", [])
     if len(existing_user) > 0:
         return render_template("createAccount.html", error="Username already exists")
 
