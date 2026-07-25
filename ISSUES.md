@@ -2,7 +2,7 @@
 
 
 ## 1. Broken access control (A01)
-[In app.py, row 206 & 207](app.py)
+[In actions.py, row 149](actions.py)
 
 ## 2. Injection (A03)
 [In actions.py, row 33](actions.py)

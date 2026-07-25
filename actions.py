@@ -145,7 +145,9 @@ def delete_recipe_action():
         abort(400)
     user_id = session["user_id"]
 
-    execute_cmd("DELETE FROM recipes WHERE id = ? AND user_id = ?", [recipe_id, user_id])
+    # Issue 1. Broken access control for deleting recipe.
+    # execute_cmd("DELETE FROM recipes WHERE id = ? AND user_id = ?", [recipe_id, user_id])
+    execute_cmd("DELETE FROM recipes WHERE id = ?", [recipe_id])
 
     return redirect("/account")
 

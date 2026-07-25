@@ -206,9 +206,8 @@ def recipes():
 @app.route("/recipes/delete", methods=["POST"])
 def delete_recipe():
 
-    # Issue 1. Broken access control for deleting recipe.
-    # require_login()
-    # check_csrf()
+    require_login()
+    check_csrf()
     return delete_recipe_action()
 
 
