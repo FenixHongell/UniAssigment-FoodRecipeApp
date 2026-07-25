@@ -54,7 +54,7 @@ def signin_action(username: Optional[str], password: Optional[str]):
     session["csrf_token"] = secrets.token_hex(16)
 
     #LOG FIX
-    # create_log("SUCCESSFUL LOGIN: " + username + " - " + user[0])
+    # create_log("SUCCESSFUL LOGIN: " + username)
 
     return redirect("/")
 
